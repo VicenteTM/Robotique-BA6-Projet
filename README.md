@@ -22,5 +22,5 @@ TP1_blinky.on(LED1)
 *Remercier les prof et l'entreprisse de l'epuck2*
 
 ## References
-*Liens importants*
+*Liens encore plus importants*
 <!-- [MIT](https://choosealicense.com/licenses/mit/) -->
