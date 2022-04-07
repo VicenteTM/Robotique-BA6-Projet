@@ -1,4 +1,5 @@
 .vscode
+.venv
 *.o
 *.o.d
 *.bin
@@ -9,3 +10,4 @@
 *.map
 *.elf
 build/*
+Notes_perso.txt
