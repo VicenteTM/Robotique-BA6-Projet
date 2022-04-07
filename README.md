@@ -18,6 +18,9 @@ move(x,y);
 TP1_blinky.on(LED1)
 ```
 
+If there is a problem during compilation try to delete "libssp_nonshared.a" and "libssp.a"
+
+
 ## Remerciments
 Merci au cours de Systèmes embarqués et robotique réalisé par le Prof. Mondada et au directeur des TP M. Burnier.
 
