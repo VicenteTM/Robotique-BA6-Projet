@@ -1,3 +1,4 @@
+#include <main.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -10,7 +11,6 @@
 #include "vm/natives.h"
 #include "common/productids.h"
 #include "common/consts.h"
-#include <main.h>
 #include "config_flash_storage.h"
 
 /* Struct used to share Aseba parameters between C-style API and Aseba. */

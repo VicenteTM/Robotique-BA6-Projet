@@ -31,7 +31,6 @@
 #include "i2c_bus.h"
 #include "ir_remote.h"
 #include "leds.h"
-#include <main.h>
 #include "memory_protection.h"
 #include "motors.h"
 #include "sdio.h"
@@ -40,10 +39,15 @@
 #include "usbcfg.h"
 #include "communication.h"
 #include "uc_usage.h"
+#include "camera/dcmi_camera.h"
+#include "msgbus/messagebus.h"
 
 #define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
 
+enum{FRONT_R_IR,FRONT_RIGHT_IR,RIGHT_IR,BACK_RIGHT_IR,BACK_LEFT_IR,LEFT_IR,FRONT_LEFT_IR,FRONT_L_IR};
+
 messagebus_t bus;
+
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
@@ -448,13 +452,25 @@ int main(void)
 
     // Init the peripherals.
 	clear_leds();
-	set_body_led(0);
+	set_body_led(1);
 	set_front_led(0);
 	usb_start();
 	dcmi_start();
 	po8030_start();
 	motors_init();
 	proximity_start();
+	//stars the threads for the pi regulator and the processing of the image
+	pi_regulator_start();
+	//process_image_start();
+
+    /* Infinite loop. */
+    while (1) {
+    	//waits 1 second
+        chThdSleepMilliseconds(1000);
+    }
+	    	//move 20cm forward at 5cm/s
+
+	/*
 	battery_level_start();
 	dac_start();
 	exti_start();
@@ -467,25 +483,27 @@ int main(void)
 	sdio_start();
 	playMelodyStart();
 	playSoundFileStart();
-
+	*/
+	/*
 	// Initialise Aseba system, declaring parameters
     parameter_namespace_declare(&aseba_ns, &parameter_root, "aseba");
     aseba_declare_parameters(&aseba_ns);
 
-    /* Load parameter tree from flash. */
+    /* Load parameter tree from flash.
     load_config();
 
     /* Start AsebaCAN. Must be after config was loaded because the CAN id
-     * cannot be changed at runtime. */
+     * cannot be changed at runtime.
     aseba_vm_init();
     aseba_can_start(&vmState);
 
     chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO, selector_thd, NULL);
 
-    /* Infinite loop. */
+    /* Infinite loop.
     while (1) {
         chThdSleepMilliseconds(1000);
     }
+    */
 }
 
 #define STACK_CHK_GUARD 0xe2dee396

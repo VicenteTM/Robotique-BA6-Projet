@@ -1,5 +1,6 @@
 #include <hal.h>
 #include <ch.h>
+#include <main.h>
 #include <string.h>
 #include "cmp_mem_access/cmp_mem_access.h"
 #include "serial-datagram/serial_datagram.h"
@@ -9,7 +10,6 @@
 #include "sensors/battery_level.h"
 #include "leds.h"
 #include "sensors/VL53L0X/VL53L0X.h"
-#include <main.h>
 
 /*
  * This module uses C MessagePack (CMP) to form messages and serial_datagram to 

@@ -17,11 +17,11 @@
 #include "sensors/battery_level.h"
 #include "config_flash_storage.h"
 #include "leds.h"
-#include <main.h>
 #include "motors.h"
 #include <fat.h>
 #include <audio/play_sound_file.h>
 #include <audio/play_melody.h>
+#include <main.h>
 
 #define TEST_WA_SIZE        THD_WORKING_AREA_SIZE(256)
 #define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
