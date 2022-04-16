@@ -162,21 +162,21 @@ class Capteur_dist:
 
 class Robot:
 
-    def __init__(self, position,direction,capteur_angles):
+    def __init__(self, position = Vector(r=1,theta=-90),direction = 40,capteur_angles = [0,45,-45,90,-90]):
         self.bo = True
         self.position = position
         self.direction = Vector(r=1,theta=direction)
 
         self.capteurs = []
         for capteur_angle in capteur_angles:
-            position_c_abs,position_c_rel = self.compute_capteur(capteur_angle)
+            position_c_abs,position_c_rel = self.compute_capteur_position(capteur_angle)
             capteur = Capteur_dist(position_c_abs,position_c_rel,capteur_angle)
             self.capteurs.append(capteur)
 
         self.circle = plt.Circle(self.position.xy, robot_radius,fill=True, ec= 'black',fc= 'white')
         ax.add_artist(self.circle)
 
-        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow()
+        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow_position()
         self.arrow = plt.arrow(x_arrow, y_arrow, dx_arrow, dy_arrow,length_includes_head = True, width = 0.1*robot_radius)
 
         x_right_data, y_right_data = self.compute_wheel_position('right')
@@ -187,12 +187,12 @@ class Robot:
         ax.add_line(self.right_wheel)
         ax.add_line(self.left_wheel)
 
-    def compute_capteur(self,capteur_angle):
+    def compute_capteur_position(self,capteur_angle):
         position_c_rel = Vector(r = robot_radius, theta = capteur_angle + self.direction.theta)
         position_c_abs = self.position + position_c_rel
         return position_c_abs, position_c_rel
 
-    def compute_arrow(self):
+    def compute_arrow_position(self):
         self.direction.r = 1
         x_arrow = self.position.x-robot_radius*self.direction.x
         y_arrow = self.position.y-robot_radius*self.direction.y
@@ -218,12 +218,12 @@ class Robot:
 
     def update_capteurs(self):
         for capteur in self.capteurs:
-            position_c_rel,position_c_abs = self.compute_capteur(capteur.angle_rel)
+            position_c_rel,position_c_abs = self.compute_capteur_position(capteur.angle_rel)
             capteur.update(position_c_rel,position_c_abs)
 
     def update_robot_plot(self):
         self.circle.set(center=self.position.xy)
-        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow()
+        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow_position()
         self.arrow.set_data(x = x_arrow, y = y_arrow,dx = dx_arrow, dy = dy_arrow)
 
         x_right_data, y_right_data = self.compute_wheel_position('right')
@@ -454,10 +454,9 @@ fig, ax = plt.subplots()
 
 fig.canvas.mpl_connect('key_press_event', on_press)
 
-# ax.plot(np.random.rand(12), np.random.rand(12), 'go', label = 'hey')
 xl = ax.set_xlabel('easy come, easy go')
 ax.set_title('Press a key')
-robot = Robot(Vector(r=1,theta=-90),40,[0,45,-45,90,-90])
+robot = Robot()
 ax.set_xlim([-5, 5])
 ax.set_ylim([-5, 5])
 ax.set_aspect('equal', adjustable='box')
