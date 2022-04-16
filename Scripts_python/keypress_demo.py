@@ -161,56 +161,75 @@ class Capteur_dist:
 
 
 class Robot:
-    
+
     def __init__(self, position,direction,capteur_angles):
+        self.bo = True
         self.position = position
         self.direction = Vector(r=1,theta=direction)
+
         self.capteurs = []
         for capteur_angle in capteur_angles:
-            position_c_rel = Vector(r = robot_radius, theta = capteur_angle + self.direction.theta)
-            position_c_abs = self.position + position_c_rel
+            position_c_abs,position_c_rel = self.compute_capteur(capteur_angle)
             capteur = Capteur_dist(position_c_abs,position_c_rel,capteur_angle)
             self.capteurs.append(capteur)
+
         self.circle = plt.Circle(self.position.xy, robot_radius,fill=True, ec= 'black',fc= 'white')
         ax.add_artist(self.circle)
-        self.arrow = plt.arrow(self.position.x-robot_radius*self.direction.x, self.position.y-robot_radius*self.direction.y, robot_diameter*(self.direction.x), robot_diameter*(self.direction.y),
-                                length_includes_head = True, width = 0.1*robot_radius)
 
-        center_right_wheel = self.position + Vector(r=wheel_dist/2,theta=self.direction.theta - 90)
-        min_right_wheel = center_right_wheel + Vector(r=wheel_radius,theta=center_right_wheel.theta-90)
-        max_right_wheel = min_right_wheel + Vector(r=wheel_diameter,theta=self.direction.theta)
-        self.right_wheel = plt.Line2D([min_right_wheel.x, max_right_wheel.x],[min_right_wheel.y, max_right_wheel.y])
+        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow()
+        self.arrow = plt.arrow(x_arrow, y_arrow, dx_arrow, dy_arrow,length_includes_head = True, width = 0.1*robot_radius)
+
+        x_right_data, y_right_data = self.compute_wheel_position('right')
+        self.right_wheel = plt.Line2D(x_right_data, y_right_data)
+
+        x_left_data, y_left_data = self.compute_wheel_position('left')
+        self.left_wheel = plt.Line2D(x_left_data, y_left_data)
         ax.add_line(self.right_wheel)
-
-        center_left_wheel = self.position + Vector(r=wheel_dist/2,theta=self.direction.theta + 90)
-        min_left_wheel = center_left_wheel + Vector(r=wheel_radius,theta=center_left_wheel.theta +90)
-        max_left_wheel = min_left_wheel + Vector(r=wheel_diameter,theta=self.direction.theta)
-        self.left_wheel = plt.Line2D([min_left_wheel.x, max_left_wheel.x],[min_left_wheel.y, max_left_wheel.y])
         ax.add_line(self.left_wheel)
-        
+
+    def compute_capteur(self,capteur_angle):
+        position_c_rel = Vector(r = robot_radius, theta = capteur_angle + self.direction.theta)
+        position_c_abs = self.position + position_c_rel
+        return position_c_abs, position_c_rel
+
+    def compute_arrow(self):
+        self.direction.r = 1
+        x_arrow = self.position.x-robot_radius*self.direction.x
+        y_arrow = self.position.y-robot_radius*self.direction.y
+        dx_arrow =  robot_diameter*(self.direction.x)
+        dy_arrow =  robot_diameter*(self.direction.y)
+
+        return x_arrow, y_arrow, dx_arrow, dy_arrow
+
+    def compute_wheel_position(self,side):
+        if side == 'right':
+            alpha = -90
+        elif side == 'left':
+            alpha = 90
+        else:
+            return None
+
+        center_wheel = self.position + Vector(r=wheel_dist/2,theta=self.direction.theta + alpha)
+        min_wheel = center_wheel + Vector(r=wheel_radius,theta=self.direction.theta)
+        max_wheel = center_wheel + Vector(r=wheel_radius,theta=self.direction.theta + 180)
+        x_data = [min_wheel.x, max_wheel.x]
+        y_data = [min_wheel.y, max_wheel.y]
+        return x_data, y_data
 
     def update_capteurs(self):
         for capteur in self.capteurs:
-            position_c_rel = Vector(r = robot_radius, theta = capteur.angle_rel + self.direction.theta)
-            position_c_abs = self.position + position_c_rel
-            capteur.update(position_c_abs,position_c_rel)
+            position_c_rel,position_c_abs = self.compute_capteur(capteur.angle_rel)
+            capteur.update(position_c_rel,position_c_abs)
 
     def update_robot_plot(self):
         self.circle.set(center=self.position.xy)
-        self.direction.r = 1
-        self.arrow.set_data(x=self.position.x-robot_radius*self.direction.x, y=self.position.y-robot_radius*self.direction.y,dx= robot_diameter*(self.direction.x), dy=robot_diameter*(self.direction.y))
+        x_arrow, y_arrow, dx_arrow, dy_arrow = self.compute_arrow()
+        self.arrow.set_data(x = x_arrow, y = y_arrow,dx = dx_arrow, dy = dy_arrow)
 
-        center_right_wheel = self.position + Vector(r=wheel_dist/2,theta=self.direction.theta - 90)
-        min_right_wheel = center_right_wheel + Vector(r=wheel_radius,theta=center_right_wheel.theta-90)
-        max_right_wheel = min_right_wheel + Vector(r=wheel_diameter,theta=self.direction.theta)
-        print(max_right_wheel)
-        self.right_wheel.set(xdata = [min_right_wheel.x, max_right_wheel.x],ydata = [min_right_wheel.y, max_right_wheel.y])
-
-        center_left_wheel = self.position + Vector(r=wheel_dist/2,theta=self.direction.theta + 90)
-        min_left_wheel = center_left_wheel + Vector(r=wheel_radius,theta=center_left_wheel.theta +90)
-        max_left_wheel = min_left_wheel + Vector(r=wheel_diameter,theta=self.direction.theta)
-        print(max_left_wheel)
-        self.left_wheel.set(xdata = [min_left_wheel.x, max_left_wheel.x],ydata = [min_left_wheel.y, max_left_wheel.y])
+        x_right_data, y_right_data = self.compute_wheel_position('right')
+        x_left_data, y_left_data = self.compute_wheel_position('left')
+        self.right_wheel.set(xdata = x_right_data, ydata = y_right_data)
+        self.left_wheel.set(xdata = x_left_data, ydata = y_left_data)
 
     def move(self, d_r =None, d_theta=None):
         if d_r is not None:
@@ -233,13 +252,13 @@ def on_press(event):
     #     visible = xl.get_visible()
     #     xl.set_visible(not visible)
     #     fig.canvas.draw()
-    if event.key == 'w':
+    if event.key == 'up':
         robot.move(d_r = 1)
-    elif event.key == 'z':
+    elif event.key == 'down':
         robot.move(d_r = -1)
-    elif event.key == 'a':
+    elif event.key == 'left':
         robot.move(d_theta = 10)
-    elif event.key == 'd':
+    elif event.key == 'right':
         robot.move(d_theta = -10)
 
 
@@ -438,7 +457,7 @@ fig.canvas.mpl_connect('key_press_event', on_press)
 # ax.plot(np.random.rand(12), np.random.rand(12), 'go', label = 'hey')
 xl = ax.set_xlabel('easy come, easy go')
 ax.set_title('Press a key')
-robot = Robot(Vector(r=0,theta=0),40,[0,45,-45,90,-90])
+robot = Robot(Vector(r=1,theta=-90),40,[0,45,-45,90,-90])
 ax.set_xlim([-5, 5])
 ax.set_ylim([-5, 5])
 ax.set_aspect('equal', adjustable='box')
