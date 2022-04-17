@@ -12,7 +12,10 @@ from threading import Thread
 import serial
 import time
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button
 
 import math
 
@@ -246,12 +249,6 @@ class Robot:
 
 
 def on_press(event):
-    # print('press', event.key)
-    # sys.stdout.flush()
-    # if event.key == 'x':
-    #     visible = xl.get_visible()
-    #     xl.set_visible(not visible)
-    #     fig.canvas.draw()
     if event.key == 'up':
         robot.move(d_r = 1)
     elif event.key == 'down':
@@ -261,18 +258,20 @@ def on_press(event):
     elif event.key == 'right':
         robot.move(d_theta = -10)
 
+###############################################
 
-# #handler when closing the window
-# def handle_close(evt):
-#     #we stop the serial thread
-#     reader_thd.stop()
-#     print(goodbye)
+#handler when closing the window
+def handle_close(evt):
+    #we stop the serial thread
+    # reader_thd.stop()
+    print(goodbye)
 
-# #update the plots
-# def update_plot():
-#     if(reader_thd.need_to_update_plot()):
-#         fig.canvas.draw_idle()
-#         reader_thd.plot_updated()
+#update the plots
+def update_plot():
+    # if(reader_thd.need_to_update_plot()):
+    #     fig.canvas.draw_idle()
+    #     reader_thd.plot_updated()
+        return
 
 # #sends the data of the sinus to the serial port in int16
 # def sendFloatSerial(port):
@@ -450,13 +449,40 @@ def on_press(event):
 # reader_thd.start()
 
 
-fig, ax = plt.subplots()
+###############################################
+
+
+fig, ax = plt.subplots(figsize=(19,9))
 
 fig.canvas.mpl_connect('key_press_event', on_press)
+fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
+mng = plt.get_current_fig_manager()
+mng.window.resizable(False, False)
+mng.window.wm_geometry("+0+0")
+
+#timer to update the plot from within the state machine of matplotlib
+#because matplotlib is not thread safe...
+timer = fig.canvas.new_timer(interval=50)
+timer.add_callback(update_plot)
+timer.start()
+
+robot = Robot()
+
+#positions of the buttons, sliders and radio buttons
+colorAx             = 'lightgoldenrodyellow'
+resetAx             = plt.axes([0.8, 0.025, 0.1, 0.04])
+sendAndReceiveAx    = plt.axes([0.1, 0.025, 0.15, 0.04])
+receiveAx           = plt.axes([0.25, 0.025, 0.1, 0.04])
+stopAx              = plt.axes([0.35, 0.025, 0.1, 0.04])
+
+#config of the buttons, sliders and radio buttons
+resetButton             = Button(resetAx, 'Reset sinus', color=colorAx, hovercolor='0.975')
+sendAndReceiveButton    = Button(sendAndReceiveAx, 'Send sinus and read', color=colorAx, hovercolor='0.975')
+receiveButton           = Button(receiveAx, 'Only read', color=colorAx, hovercolor='0.975')
+stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
 xl = ax.set_xlabel('easy come, easy go')
 ax.set_title('Press a key')
-robot = Robot()
 ax.set_xlim([-5, 5])
 ax.set_ylim([-5, 5])
 ax.set_aspect('equal', adjustable='box')
