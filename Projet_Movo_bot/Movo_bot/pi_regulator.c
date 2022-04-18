@@ -116,12 +116,27 @@ static THD_FUNCTION(PiRegulator, arg) {
     	   speed_correction_r = (get_calibrated_prox(RIGHT_IR)-GOAL_DISTANCE);
     	   speed_correction_l = (get_calibrated_prox(LEFT_IR)-GOAL_DISTANCE);
        }
+
+       //if the robot is blocked in a corner
+       float a,b,c,d;
+       a=get_calibrated_prox(FRONT_RIGHT_IR);
+       b=get_calibrated_prox(FRONT_LEFT_IR);
+       c=get_calibrated_prox(RIGHT_IR);
+       d=get_calibrated_prox(LEFT_IR);
+
+       if(a<GOAL_DISTANCE)
+    	   if(b<GOAL_DISTANCE)		//inf ou sup?
+    		   if(c<GOAL_DISTANCE)
+    			   if(d<GOAL_DISTANCE){
+    				   speed_r=-MOTOR_SPEED_LIMIT* NSTEP_ONE_TURN / WHEEL_PERIMETER;
+    				   speed_l=MOTOR_SPEED_LIMIT* NSTEP_ONE_TURN / WHEEL_PERIMETER;
+    				   speed_correction_l=0;
+    				   speed_correction_r=0;
+    				   //chThdSleepUntil(100);
+       }
        */
        speed_correction_r = (get_calibrated_prox(RIGHT_IR)-GOAL_DISTANCE);
        speed_correction_l = (get_calibrated_prox(LEFT_IR)-GOAL_DISTANCE);
-
-        //if the line is nearly in front of the camera, don't rotate
-
         //applies the speed from the PI regulator and the correction for the rotation
 		right_motor_set_speed(-speed_l + ROTATION_COEFF*speed_correction_r );
 		left_motor_set_speed((speed_r + ROTATION_COEFF*speed_correction_l ));
