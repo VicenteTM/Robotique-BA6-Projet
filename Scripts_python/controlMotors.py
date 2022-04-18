@@ -271,7 +271,7 @@ class serial_thread(Thread):
                 time.sleep(0.01)
             self.port.close()
 
-        
+#MAIN        
 #test if the serial port as been given as argument in the terminal
 if len(sys.argv) == 1:
     print('Please give the serial port to use as argument')
@@ -328,7 +328,6 @@ resetButton.on_clicked(reset)
 sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
 receiveButton.on_clicked(reader_thd.setContReceive)
 stop.on_clicked(reader_thd.stop_reading)
-
 
 #starts the matplotlib main
 plt.show()
