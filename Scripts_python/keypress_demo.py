@@ -262,15 +262,15 @@ def on_press(event):
 
 #handler when closing the window
 def handle_close(evt):
-    #we stop the serial thread
-    # reader_thd.stop()
+    # we stop the serial thread
+    reader_thd.stop()
     print(goodbye)
 
 #update the plots
 def update_plot():
-    # if(reader_thd.need_to_update_plot()):
-    #     fig.canvas.draw_idle()
-    #     reader_thd.plot_updated()
+    if(reader_thd.need_to_update_plot()):
+        fig.canvas.draw_idle()
+        reader_thd.plot_updated()
         return
 
 # #sends the data of the sinus to the serial port in int16
@@ -363,90 +363,180 @@ def update_plot():
 #         print('Timout...')
 #         return []
 
-# #thread used to control the communication part
-# class serial_thread(Thread):
+#sends the data of the sinus to the serial port in int8
+def sendFloatSerial(port):
+    data = command.astype(np.int8)
 
-#     #init function called when the thread begins
-#     def __init__(self, port):
-#         Thread.__init__(self)
-#         self.contReceive = False
-#         self.contSendAndReceive = False
-#         self.alive = True
-#         self.need_to_update = False
+    #to convert to int8 we need to pass via numpy
+    size = np.array([data.size], dtype=np.int8)
 
-#         print('Connecting to port {}'.format(port))
-        
-#         try:
-#             self.port = serial.Serial(port, timeout=0.5)
-#         except:
-#             print('Cannot connect to the e-puck2')
-#             sys.exit(0)
-#     #function called after the init
-#     def run(self):
-        
-#         while(self.alive):
-#             if(self.contSendAndReceive):
-#                 sendFloatSerial(self.port)
-#                 update_fft_plot(self.port)
+    send_buffer = bytearray([])
 
-#             elif(self.contReceive):
-#                 update_fft_plot(self.port)
+    i = 0
+    while(i < size[0]):
+        send_buffer += struct.pack('<h',data[i])
+        i = i+1
+
+    port.write(b'START')
+    port.write(struct.pack('<h',2*size[0]))
+    port.write(send_buffer)
+    print('sent !')
+
+# #reads the FFT in float32 from the serial
+# def readFloatSerial(port):
+
+#     state = 0
+
+#     while(state != 5):
+
+#         #reads 1 byte
+#         c1 = port.read(1)
+#         #timeout condition
+#         if(c1 == b''):
+#             print('Timout...')
+#             return [];
+
+#         if(state == 0):
+#             if(c1 == b'S'):
+#                 state = 1
 #             else:
-#                 #flush the serial
-#                 self.port.read(self.port.inWaiting())
-#                 time.sleep(0.1)
+#                 state = 0
+#         elif(state == 1):
+#             if(c1 == b'T'):
+#                 state = 2
+#             elif(c1 == b'S'):
+#                 state = 1
+#             else:
+#                 state = 0
+#         elif(state == 2):
+#             if(c1 == b'A'):
+#                 state = 3
+#             elif(c1 == b'S'):
+#                 state = 1
+#             else:
+#                 state = 0
+#         elif(state == 3):
+#             if(c1 == b'R'):
+#                 state = 4
+#             elif (c1 == b'S'):
+#                 state = 1
+#             else:
+#                 state = 0
+#         elif(state == 4):
+#             if(c1 == b'T'):
+#                 state = 5
+#             elif (c1 == b'S'):
+#                 state = 1
+#             else:
+#                 state = 0
 
-#     #enables the continuous reading
-#     #and disables the continuous sending and receiving
-#     def setContReceive(self, val):  
-#         self.contSendAndReceive = False
-#         self.contReceive = True
+#     #reads the size
+#     #converts as short int in little endian the two bytes read
+#     size = struct.unpack('<h',port.read(2)) 
+#     #removes the second element which is void
+#     size = size[0]  
 
-#     #disables the continuous reading
-#     #and enables the continuous sending and receiving
-#     def setContSendAndReceive(self, val):
-#         self.contSendAndReceive = True
-#         self.contReceive = False
+#     #reads the data
+#     rcv_buffer = port.read(size*4)
+#     data = []
 
-#     #disables the continuous reading
-#     #and disables the continuous sending and receiving
-#     def stop_reading(self, val):
-#         self.contSendAndReceive = False
-#         self.contReceive = False
+#     #if we receive the good amount of data, we convert them in float32
+#     if(len(rcv_buffer) == 4*size):
+#         i = 0
+#         while(i < size):
+#             data.append(struct.unpack_from('<f',rcv_buffer, i*4))
+#             i = i+1
 
-#     #tell the plot need to be updated
-#     def tell_to_update_plot(self):
-#         self.need_to_update = True
+#         print('received !')
+#         return data
+#     else:
+#         print('Timout...')
+#         return []
 
-#     #tell the plot has been updated
-#     def plot_updated(self):
-#         self.need_to_update = False
+# #thread used to control the communication part
+class serial_thread(Thread):
 
-#     #tell if the plot need to be updated
-#     def need_to_update_plot(self):
-#         return self.need_to_update
+    #init function called when the thread begins
+    def __init__(self, port):
+        Thread.__init__(self)
+        self.contReceive = False
+        self.contSendAndReceive = False
+        self.alive = True
+        self.need_to_update = False
 
-#     #clean exit of the thread if we need to stop it
-#     def stop(self):
-#         self.alive = False
-#         self.join()
-#         if(self.port.isOpen()):
-#             while(self.port.inWaiting() > 0):
-#                 self.port.read(self.port.inWaiting())
-#                 time.sleep(0.01)
-#             self.port.close()
+        print('Connecting to port {}'.format(port))
+        
+        try:
+            self.port = serial.Serial(port, timeout=0.5)
+        except:
+            print('Cannot connect to the e-puck2')
+            sys.exit(0)
+    #function called after the init
+    def run(self):
+        
+        while(self.alive):
+            if(self.contSendAndReceive):
+                sendFloatSerial(self.port)
+                # update_fft_plot(self.port)
+
+            # elif(self.contReceive):
+                # update_fft_plot(self.port)
+            else:
+                #flush the serial
+                self.port.read(self.port.inWaiting())
+                time.sleep(0.1)
+
+    #enables the continuous reading
+    #and disables the continuous sending and receiving
+    def setContReceive(self, val):  
+        self.contSendAndReceive = False
+        self.contReceive = True
+
+    #disables the continuous reading
+    #and enables the continuous sending and receiving
+    def setContSendAndReceive(self, val):
+        self.contSendAndReceive = True
+        self.contReceive = False
+
+    #disables the continuous reading
+    #and disables the continuous sending and receiving
+    def stop_reading(self, val):
+        self.contSendAndReceive = False
+        self.contReceive = False
+
+    #tell the plot need to be updated
+    def tell_to_update_plot(self):
+        self.need_to_update = True
+
+    #tell the plot has been updated
+    def plot_updated(self):
+        self.need_to_update = False
+
+    #tell if the plot need to be updated
+    def need_to_update_plot(self):
+        return self.need_to_update
+
+    #clean exit of the thread if we need to stop it
+    def stop(self):
+        self.alive = False
+        self.join()
+        if(self.port.isOpen()):
+            while(self.port.inWaiting() > 0):
+                self.port.read(self.port.inWaiting())
+                time.sleep(0.01)
+            self.port.close()
 
         
 # #test if the serial port as been given as argument in the terminal
-# if len(sys.argv) == 1:
-#     print('Please give the serial port to use as argument')
-#     sys.exit(0)
+if len(sys.argv) == 1:
+    print('Please give the serial port to use as argument')
+    sys.exit(0)
     
 
 # #serial reader thread config
 # #begins the serial thread
-# reader_thd = serial_thread(sys.argv[1])
-# reader_thd.start()
+reader_thd = serial_thread(sys.argv[1])
+reader_thd.start()
 
 
 ###############################################
@@ -477,13 +567,14 @@ stopAx              = plt.axes([0.35, 0.025, 0.1, 0.04])
 
 #config of the buttons, sliders and radio buttons
 resetButton             = Button(resetAx, 'Reset sinus', color=colorAx, hovercolor='0.975')
-sendAndReceiveButton    = Button(sendAndReceiveAx, 'Send sinus and read', color=colorAx, hovercolor='0.975')
-receiveButton           = Button(receiveAx, 'Only read', color=colorAx, hovercolor='0.975')
+sendAndReceiveButton    = Button(sendAndReceiveAx, 'Control and read', color=colorAx, hovercolor='0.975')
+receiveButton           = Button(receiveAx, 'Only control', color=colorAx, hovercolor='0.975')
 stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
-xl = ax.set_xlabel('easy come, easy go')
-ax.set_title('Press a key')
 ax.set_xlim([-5, 5])
 ax.set_ylim([-5, 5])
 ax.set_aspect('equal', adjustable='box')
+
+command = 5
+
 plt.show()

@@ -13,11 +13,20 @@
 
 #include <arm_math.h>
 
+#include <send_receive.h>
+
 //uncomment to send the FFTs results from the real microphones
 //#define SEND_FROM_MIC
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size) 
+{
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
+}
 
 static void serial_start(void)
 {
@@ -62,6 +71,16 @@ int main(void)
     timer12_start();
     //inits the motors
     motors_init();
+
+    start_command_reception();
+    start_command_send();
+
+    /* Infinite loop. */
+    while (1) {
+    	//waits 1 second
+        chThdSleepMilliseconds(1001);
+    }
+
 }
 
 #define STACK_CHK_GUARD 0xe2dee396
@@ -71,3 +90,4 @@ void __stack_chk_fail(void)
 {
     chSysHalt("Stack smashing detected");
 }
+

@@ -329,5 +329,6 @@ sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
 receiveButton.on_clicked(reader_thd.setContReceive)
 stop.on_clicked(reader_thd.stop_reading)
 
+
 #starts the matplotlib main
 plt.show()
