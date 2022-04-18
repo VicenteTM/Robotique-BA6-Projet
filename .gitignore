@@ -9,3 +9,6 @@
 *.map
 *.elf
 build/*
+.venv
+Notes_perso.txt
+.gitignore
