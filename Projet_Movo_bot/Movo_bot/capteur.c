@@ -4,6 +4,7 @@
 #include <usbcfg.h>
 #include <sensors\proximity.h>
 #include <main.h>
+#include <sensors\proximity.h>
 
 // static THD_WORKING_AREA(waReceiveCommand, 1024);
 // static THD_FUNCTION(ProcessImage, arg) {
@@ -18,11 +19,16 @@
 //MUTEX_DECL(bus_lock);
 //CONDVAR_DECL(bus_condvar);
 
-static THD_WORKING_AREA(waSendCommand, 1024);
-static THD_FUNCTION(SendCommand, arg) {
+static THD_WORKING_AREA(waCapteur, 1024);
+static THD_FUNCTION(Capteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
+    uint32_t capteur;
+    uint32_t capteur_mm;
+    capteur=get_calibrated_prox(0);
+    chprintf((BaseSequentialStream *)&SD3," hey \r\n");
+    chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur);
   	while(1){
         chThdSleepMilliseconds(1000);
     	
@@ -32,13 +38,7 @@ static THD_FUNCTION(SendCommand, arg) {
 }
 
 
-void start_command_reception(void)
+void start_capteur(void)
 {
-    // chThdCreateStatic(waReceiveCommand, sizeof(waReceiveCommand), NORMALPRIO, ReceiveCommand, NULL);    
-}
-
-
-void start_command_send(void)
-{
-    chThdCreateStatic(waSendCommand, sizeof(waSendCommand), NORMALPRIO, SendCommand, NULL);
+    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+2, Capteur, NULL);    
 }

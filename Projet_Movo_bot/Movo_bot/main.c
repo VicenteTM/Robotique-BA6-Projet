@@ -14,6 +14,7 @@
 #include <arm_math.h>
 
 #include <send_receive.h>
+#include <moteur.h>
 
 //uncomment to send the FFTs results from the real microphones
 //#define SEND_FROM_MIC
@@ -77,8 +78,9 @@ int main(void)
     motors_init();
     proximity_start();
     calibrate_ir();
-    start_command_reception();
-    start_command_send();
+    start_moteur();
+    //start_command_reception();
+    //start_command_send();
 
     /* Infinite loop. */
     while (1) {
