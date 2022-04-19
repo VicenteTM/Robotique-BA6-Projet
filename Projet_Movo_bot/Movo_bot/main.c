@@ -10,7 +10,7 @@
 #include <chprintf.h>
 #include <motors.h>
 #include <audio/microphone.h>
-
+#include <sensors/proximity.h>
 #include <arm_math.h>
 
 #include <send_receive.h>
@@ -20,6 +20,9 @@
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -62,7 +65,8 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-
+    /** Inits the Inter Process Communication bus. */
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
     //starts the serial communication
     serial_start();
     //starts the USB communication
@@ -71,14 +75,15 @@ int main(void)
     timer12_start();
     //inits the motors
     motors_init();
-
+    proximity_start();
+    calibrate_ir();
     start_command_reception();
     start_command_send();
 
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
-        chThdSleepMilliseconds(1001);
+        chThdSleepMilliseconds(1000);
     }
 
 }
