@@ -33,6 +33,7 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
         			state = 1;
         		else
         			state = 0;
+        		break;
         	case 1:
         		if(c1 == 'T')
         			state = 2;
@@ -40,6 +41,7 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
         			state = 1;
         		else
         			state = 0;
+        		break;
         	case 2:
         		if(c1 == 'A')
         			state = 3;
@@ -47,6 +49,7 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
         			state = 1;
         		else
         			state = 0;
+        		break;
         	case 3:
         		if(c1 == 'R')
         			state = 4;
@@ -54,6 +57,7 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
         			state = 1;
         		else
         			state = 0;
+        		break;
         	case 4:
         		if(c1 == 'T')
         			state = 5;
@@ -61,20 +65,21 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
         			state = 1;
         		else
         			state = 0;
+        		break;
         }
-        
+
 	}
 
 	c1 = chSequentialStreamGet(in);
 	c2 = chSequentialStreamGet(in);
-	temp_size = (int16_t)((c1 | c2<<8));
+	temp_size = (int16_t)(c1);
 
 
 	if((temp_size/2) == size)
 	{
 		c1 = chSequentialStreamGet(in);
 		c2 = chSequentialStreamGet(in);
-		data[0] = (int16_t)((c1 | c2<<8));
+		data[0] = (int16_t)(c1);
 	}
 
 	return temp_size/2;
@@ -95,7 +100,7 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
     	{
     		chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
     	}
-        chThdSleepMilliseconds(100);
+        //chThdSleepMilliseconds(100);
     }
 }
 

@@ -1,56 +1,16 @@
-"""
-==============
-Keypress event
-==============
-
-Show how to connect to keypress events.
-"""
-
-import struct
 import sys
 from threading import Thread
 import serial
 import time
-import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button
+from matplotlib.widgets import Button
+
 from robotPlot import Robot
+from communication import readFloatSerial, sendFloatSerial
+from plotUtilities import goodbye
 
-
-#Can be converted into a portable package by using the PyInstaller module
-# pip install pyinstaller (need to be used with Python3)
-# cf. https://pyinstaller.readthedocs.io/en/v3.3.1/usage.html
-
-goodbye = """
-          |\      _,,,---,,_
-          /,`.-'`'    -.  ;-;;,_
-         |,4-  ) )-,_..;\ (  `'-'
- _______'---''(_/--'__`-'\_)______   ______            _______  _
-(  ____ \(  ___  )(  ___  )(  __  \ (  ___ \ |\     /|(  ____ \| |
-| (    \/| (   ) || (   ) || (  \  )| (   ) )( \   / )| (    \/| |
-| |      | |   | || |   | || |   ) || (__/ /  \ (_) / | (__    | |
-| | ____ | |   | || |   | || |   | ||  __ (    \   /  |  __)   | |
-| | \_  )| |   | || |   | || |   ) || (  \ \    ) (   | (      |_|
-| (___) || (___) || (___) || (__/  )| )___) )   | |   | (____/\ _ 
-(_______)(_______)(_______)(______/ |______/    \_/   (_______/(_)                                         
-"""
-
-goodbye2 = """
-                   /\_/\\
-                 =( °w° )=
-                   )   (  //
-                  (__ __)//
- _____                 _ _                _ 
-|  __ \               | | |              | |
-| |  \/ ___   ___   __| | |__  _   _  ___| |
-| | __ / _ \ / _ \ / _` | '_ \| | | |/ _ \ |
-| |_\ \ (_) | (_) | (_| | |_) | |_| |  __/_|
- \____/\___/ \___/ \__,_|_.__/ \__, |\___(_)
-                                __/ |       
-                               |___/        
-"""
 
 def on_press(event):
     if event.key == 'up':
@@ -66,7 +26,6 @@ def on_press(event):
         robot.move(d_theta = -10)
         robot.command = 3
 
-###############################################
 
 #handler when closing the window
 def handle_close(evt):
@@ -84,102 +43,10 @@ def update_plot():
 def reset(event):
     return
 
-#sends the data of the sinus to the serial port in int8
-def sendFloatSerial(port):
-    data = np.array([robot.command]).astype(np.int16)
-
-    #to convert to int16 we need to pass via numpy
-    size = np.array([data.size], dtype=np.int16)
-
-    send_buffer = bytearray([])
-
-    i = 0
-    while(i < size[0]):
-        send_buffer += struct.pack('<h',data[i])
-        i = i+1
-    
-
-    port.write(b'START')
-    port.write(struct.pack('<h',2*size[0]))
-    port.write(send_buffer)
-    print('sent !')
-    time.sleep(0.1)
-
 def readcommand(port):
     command = readFloatSerial(port) 
     if(len(command)>0):
         print(command)
-
-# #reads the FFT in float32 from the serial
-def readFloatSerial(port):
-
-    state = 0
-
-    while(state != 5):
-
-        #reads 1 byte
-        c1 = port.read(1)
-        #timeout condition
-        if(c1 == b''):
-            print('Timout...')
-            return [];
-
-        if(state == 0):
-            if(c1 == b'S'):
-                state = 1
-            else:
-                state = 0
-        elif(state == 1):
-            if(c1 == b'T'):
-                state = 2
-            elif(c1 == b'S'):
-                state = 1
-            else:
-                state = 0
-        elif(state == 2):
-            if(c1 == b'A'):
-                state = 3
-            elif(c1 == b'S'):
-                state = 1
-            else:
-                state = 0
-        elif(state == 3):
-            if(c1 == b'R'):
-                state = 4
-            elif (c1 == b'S'):
-                state = 1
-            else:
-                state = 0
-        elif(state == 4):
-            if(c1 == b'T'):
-                state = 5
-            elif (c1 == b'S'):
-                state = 1
-            else:
-                state = 0
-
-    #reads the size
-    #converts as short int in little endian the two bytes read
-    size = struct.unpack('<h',port.read(2)) 
-    #removes the second element which is void
-    size = size[0]  
-
-    #reads the data
-    rcv_buffer = port.read(size*4)
-    data = []
-
-    #if we receive the good amount of data, we convert them in float32
-    if(len(rcv_buffer) == 4*size):
-        i = 0
-        while(i < size):
-            data.append(struct.unpack_from('<f',rcv_buffer, i*4))
-            i = i+1
-
-        print('received !')
-        return data
-    else:
-        print('Timout...')
-        return []
 
 # #thread used to control the communication part
 class serial_thread(Thread):
@@ -204,8 +71,8 @@ class serial_thread(Thread):
         
         while(self.alive):
             if(self.contSendAndReceive):
-                sendFloatSerial(self.port)
-                readcommand(self.port)
+                sendFloatSerial(self.port,robot.command)
+                # readcommand(self.port)
 
             elif(self.contReceive):
                 readcommand(self.port)
@@ -265,10 +132,6 @@ if len(sys.argv) == 1:
 # #begins the serial thread
 reader_thd = serial_thread(sys.argv[1])
 reader_thd.start()
-
-
-###############################################
-
 
 fig, ax = plt.subplots(figsize=(19,9))
 
