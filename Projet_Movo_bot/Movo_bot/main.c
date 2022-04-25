@@ -71,9 +71,7 @@ int main(void)
     timer12_start();
     //inits the motors
     motors_init();
-
-    start_command_reception();
-    start_command_send();
+    start_command_send_receive();
 
     /* Infinite loop. */
     while (1) {

@@ -166,7 +166,7 @@ class Capteur_dist:
 class Robot:
 
     def __init__(self, position = Vector(r=1,theta=-90),direction = 40,capteur_angles = [0,45,-45,90,-90]):
-        self.bo = True
+        self.command = 5
         self.position = position
         self.direction = Vector(r=1,theta=direction)
 
@@ -251,12 +251,16 @@ class Robot:
 def on_press(event):
     if event.key == 'up':
         robot.move(d_r = 1)
+        robot.command = 0
     elif event.key == 'down':
         robot.move(d_r = -1)
+        robot.command = 1
     elif event.key == 'left':
         robot.move(d_theta = 10)
+        robot.command = 2
     elif event.key == 'right':
         robot.move(d_theta = -10)
+        robot.command = 3
 
 ###############################################
 
@@ -271,104 +275,13 @@ def update_plot():
     if(reader_thd.need_to_update_plot()):
         fig.canvas.draw_idle()
         reader_thd.plot_updated()
-        return
-
-# #sends the data of the sinus to the serial port in int16
-# def sendFloatSerial(port):
-#     data = (sinus_plot.get_ydata()).astype(np.int16)
-
-#     #to convert to int16 we need to pass via numpy
-#     size = np.array([data.size], dtype=np.int16)
-
-#     send_buffer = bytearray([])
-
-#     i = 0
-#     while(i < size[0]):
-#         send_buffer += struct.pack('<h',data[i])
-#         i = i+1
-
-#     port.write(b'START')
-#     port.write(struct.pack('<h',2*size[0]))
-#     port.write(send_buffer)
-#     print('sent !')
-
-# #reads the FFT in float32 from the serial
-# def readFloatSerial(port):
-
-#     state = 0
-
-#     while(state != 5):
-
-#         #reads 1 byte
-#         c1 = port.read(1)
-#         #timeout condition
-#         if(c1 == b''):
-#             print('Timout...')
-#             return [];
-
-#         if(state == 0):
-#             if(c1 == b'S'):
-#                 state = 1
-#             else:
-#                 state = 0
-#         elif(state == 1):
-#             if(c1 == b'T'):
-#                 state = 2
-#             elif(c1 == b'S'):
-#                 state = 1
-#             else:
-#                 state = 0
-#         elif(state == 2):
-#             if(c1 == b'A'):
-#                 state = 3
-#             elif(c1 == b'S'):
-#                 state = 1
-#             else:
-#                 state = 0
-#         elif(state == 3):
-#             if(c1 == b'R'):
-#                 state = 4
-#             elif (c1 == b'S'):
-#                 state = 1
-#             else:
-#                 state = 0
-#         elif(state == 4):
-#             if(c1 == b'T'):
-#                 state = 5
-#             elif (c1 == b'S'):
-#                 state = 1
-#             else:
-#                 state = 0
-
-#     #reads the size
-#     #converts as short int in little endian the two bytes read
-#     size = struct.unpack('<h',port.read(2)) 
-#     #removes the second element which is void
-#     size = size[0]  
-
-#     #reads the data
-#     rcv_buffer = port.read(size*4)
-#     data = []
-
-#     #if we receive the good amount of data, we convert them in float32
-#     if(len(rcv_buffer) == 4*size):
-#         i = 0
-#         while(i < size):
-#             data.append(struct.unpack_from('<f',rcv_buffer, i*4))
-#             i = i+1
-
-#         print('received !')
-#         return data
-#     else:
-#         print('Timout...')
-#         return []
 
 #sends the data of the sinus to the serial port in int8
 def sendFloatSerial(port):
-    data = command.astype(np.int8)
+    data = np.array([robot.command]).astype(np.int16)
 
-    #to convert to int8 we need to pass via numpy
-    size = np.array([data.size], dtype=np.int8)
+    #to convert to int16 we need to pass via numpy
+    size = np.array([data.size], dtype=np.int16)
 
     send_buffer = bytearray([])
 
@@ -376,11 +289,13 @@ def sendFloatSerial(port):
     while(i < size[0]):
         send_buffer += struct.pack('<h',data[i])
         i = i+1
+    
 
-    port.write(b'START')
+    port.write(b'ABCDE')
     port.write(struct.pack('<h',2*size[0]))
     port.write(send_buffer)
     print('sent !')
+    time.sleep(0.1)
 
 # #reads the FFT in float32 from the serial
 # def readFloatSerial(port):
@@ -574,7 +489,7 @@ stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.97
 ax.set_xlim([-5, 5])
 ax.set_ylim([-5, 5])
 ax.set_aspect('equal', adjustable='box')
+sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
 
-command = 5
 
 plt.show()
