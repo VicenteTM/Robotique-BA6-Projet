@@ -11,3 +11,4 @@
 *.elf
 build/*
 Notes_perso.txt
+Scripts_python/__pycache__/*

@@ -1,14 +1,23 @@
+"""
+==============
+Keypress event
+==============
+
+Show how to connect to keypress events.
+"""
+
+import struct
+import sys
+from threading import Thread
+import serial
+import time
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button, RadioButtons
-import serial
-import struct
-import sys
-import signal
-import time
-from threading import Thread
+from matplotlib.widgets import Slider, Button
+from robotPlot import Robot
+
 
 #Can be converted into a portable package by using the PyInstaller module
 # pip install pyinstaller (need to be used with Python3)
@@ -43,15 +52,25 @@ goodbye2 = """
                                |___/        
 """
 
-#constants to compute the sinus
-A = 1000    # amplitude
-n = 1024    # nb of samples
-fs = 300    # sampling frequency
-f0 = 5      # default sinus frequency
+def on_press(event):
+    if event.key == 'up':
+        robot.move(d_r = 1)
+        robot.command = 0
+    elif event.key == 'down':
+        robot.move(d_r = -1)
+        robot.command = 1
+    elif event.key == 'left':
+        robot.move(d_theta = 10)
+        robot.command = 2
+    elif event.key == 'right':
+        robot.move(d_theta = -10)
+        robot.command = 3
+
+###############################################
 
 #handler when closing the window
 def handle_close(evt):
-    #we stop the serial thread
+    # we stop the serial thread
     reader_thd.stop()
     print(goodbye)
 
@@ -61,56 +80,13 @@ def update_plot():
         fig.canvas.draw_idle()
         reader_thd.plot_updated()
 
-#returns a sinus in an np.array of float64
-def do_sinus(freq, amp): 
-    m = np.linspace(0, n, num=(fs*n))
-    sinus = amp*np.sin(2*np.pi*freq*m)
-    sinus = sinus[0:n]
-    return sinus
-
-#returns the norm of the values of the FFT performed on the dataset given 
-#an n.array of float64
-def do_fft(array): 
-    FFT = np.fft.fft(array)
-    FFT_norme = np.sqrt(np.add(np.multiply(np.real(FFT),np.real(FFT)),(np.multiply(np.imag(FFT),np.imag(FFT)))))
-    return FFT_norme
-
-#function used to update the plot of the sinus
-def update_sinus_plot(val):
-    amp = samp.val
-    freq = sfreq.val
-    
-    sinus = do_sinus(freq,amp)
-    
-    sinus_plot.set_ydata(sinus)
-                       
-    graph_sinus.relim()
-    graph_sinus.autoscale()
-
-    reader_thd.tell_to_update_plot()
-    
-
-#function used to update the plot of the FFT
-def update_fft_plot(port):
-
-    fft_data = readFloatSerial(port)
-    
-    if(len(fft_data)>0):
-        fft_plot.set_ydata(fft_data)
-        
-        graph_fft.relim()
-        graph_fft.autoscale()
-
-        reader_thd.tell_to_update_plot()
-
 #reset the sinus plot
 def reset(event):
-    sfreq.reset()
-    samp.reset()
+    return
 
-#sends the data of the sinus to the serial port in int16
+#sends the data of the sinus to the serial port in int8
 def sendFloatSerial(port):
-    data = (sinus_plot.get_ydata()).astype(np.int16)
+    data = np.array([robot.command]).astype(np.int16)
 
     #to convert to int16 we need to pass via numpy
     size = np.array([data.size], dtype=np.int16)
@@ -121,13 +97,20 @@ def sendFloatSerial(port):
     while(i < size[0]):
         send_buffer += struct.pack('<h',data[i])
         i = i+1
+    
 
     port.write(b'START')
     port.write(struct.pack('<h',2*size[0]))
     port.write(send_buffer)
     print('sent !')
+    time.sleep(0.1)
 
-#reads the FFT in float32 from the serial
+def readcommand(port):
+    command = readFloatSerial(port) 
+    if(len(command)>0):
+        print(command)
+
+# #reads the FFT in float32 from the serial
 def readFloatSerial(port):
 
     state = 0
@@ -198,7 +181,7 @@ def readFloatSerial(port):
         print('Timout...')
         return []
 
-#thread used to control the communication part
+# #thread used to control the communication part
 class serial_thread(Thread):
 
     #init function called when the thread begins
@@ -222,10 +205,10 @@ class serial_thread(Thread):
         while(self.alive):
             if(self.contSendAndReceive):
                 sendFloatSerial(self.port)
-                update_fft_plot(self.port)
+                readcommand(self.port)
 
             elif(self.contReceive):
-                update_fft_plot(self.port)
+                readcommand(self.port)
             else:
                 #flush the serial
                 self.port.read(self.port.inWaiting())
@@ -271,32 +254,29 @@ class serial_thread(Thread):
                 time.sleep(0.01)
             self.port.close()
 
-#MAIN        
-#test if the serial port as been given as argument in the terminal
+        
+# #test if the serial port as been given as argument in the terminal
 if len(sys.argv) == 1:
     print('Please give the serial port to use as argument')
     sys.exit(0)
     
-#serial reader thread config
-#begins the serial thread
+
+# #serial reader thread config
+# #begins the serial thread
 reader_thd = serial_thread(sys.argv[1])
 reader_thd.start()
 
-#figure config
-fig, ax = plt.subplots(num=None, figsize=(10, 8), dpi=80)
-fig.canvas.set_window_title('Noisy plot')
-plt.subplots_adjust(left=0.1, bottom=0.25)
+
+###############################################
+
+
+fig, ax = plt.subplots(figsize=(19,9))
+
+fig.canvas.mpl_connect('key_press_event', on_press)
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
-
-#sinus graph config with initial plot
-graph_sinus = plt.subplot(211)
-sinus = do_sinus(f0,A)
-sinus_plot, = plt.plot(sinus, lw=1, color='red')
-
-#FFT graph config with initial plot
-graph_fft = plt.subplot(212)
-fft_plot, = plt.plot(np.arange(-n/2,n/2,1), do_fft(sinus),lw=1, color='red')
-plt.ylabel("norm")
+mng = plt.get_current_fig_manager()
+mng.window.resizable(False, False)
+mng.window.wm_geometry("+0+0")
 
 #timer to update the plot from within the state machine of matplotlib
 #because matplotlib is not thread safe...
@@ -304,30 +284,28 @@ timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_plot)
 timer.start()
 
+robot = Robot(fig, ax)
+
 #positions of the buttons, sliders and radio buttons
 colorAx             = 'lightgoldenrodyellow'
-freqAx              = plt.axes([0.1, 0.1, 0.8, 0.03], facecolor=colorAx)
-ampAx               = plt.axes([0.1, 0.15, 0.8, 0.03], facecolor=colorAx)
 resetAx             = plt.axes([0.8, 0.025, 0.1, 0.04])
 sendAndReceiveAx    = plt.axes([0.1, 0.025, 0.15, 0.04])
 receiveAx           = plt.axes([0.25, 0.025, 0.1, 0.04])
 stopAx              = plt.axes([0.35, 0.025, 0.1, 0.04])
 
 #config of the buttons, sliders and radio buttons
-sfreq                   = Slider(freqAx, 'Freq', 0.1, fs/2, valinit=f0, valstep=0.1)
-samp                    = Slider(ampAx, 'Amp', 0.1, A, valinit=A, valstep=0.1)
 resetButton             = Button(resetAx, 'Reset sinus', color=colorAx, hovercolor='0.975')
-sendAndReceiveButton    = Button(sendAndReceiveAx, 'Send sinus and read', color=colorAx, hovercolor='0.975')
-receiveButton           = Button(receiveAx, 'Only read', color=colorAx, hovercolor='0.975')
+sendAndReceiveButton    = Button(sendAndReceiveAx, 'Control and read', color=colorAx, hovercolor='0.975')
+receiveButton           = Button(receiveAx, 'Only control', color=colorAx, hovercolor='0.975')
 stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
-#callback config of the buttons, sliders and radio buttons
-sfreq.on_changed(update_sinus_plot)
-samp.on_changed(update_sinus_plot)
+ax.set_xlim([-5, 5])
+ax.set_ylim([-5, 5])
+ax.set_aspect('equal', adjustable='box')
+
 resetButton.on_clicked(reset)
 sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
 receiveButton.on_clicked(reader_thd.setContReceive)
 stop.on_clicked(reader_thd.stop_reading)
 
-#starts the matplotlib main
 plt.show()
