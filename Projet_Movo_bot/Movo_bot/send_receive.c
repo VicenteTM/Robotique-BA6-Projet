@@ -86,6 +86,13 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 
 }
 
+void SendUint8ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
+{
+	chSequentialStreamWrite(out, (uint8_t*)"START", 5);
+	chSequentialStreamWrite(out, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite(out, (uint8_t*)data, sizeof(uint16_t) * size);
+}
+
 static THD_WORKING_AREA(waSendReceiveCommand, 1024);
 static THD_FUNCTION(SendReceiveCommand, arg) {
 
@@ -95,12 +102,12 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
 
 	while(1){
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, command, 1);
-        chprintf((BaseSequentialStream *)&SDU1,"Size: %d \r\n",size);
+        //chprintf((BaseSequentialStream *)&SDU1,"Size: %d \r\n",size);
     	if(size == 1)
     	{
-    		chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
+			SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
+    	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
     	}
-        //chThdSleepMilliseconds(100);
     }
 }
 
