@@ -9,6 +9,8 @@
 
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
 #define WHEEL_PERIMETER     13 // [cm]
+#define NB_COUNTER_HALF     330 // number of step for 180° turn of the motor theoretically 323 but +7 because the wheels are sliding a little
+#define NB_COUNTER_QUARTER  165 // number of step for 90° turn of the motor
 
 static THD_WORKING_AREA(waMoteur, 1024);
 static THD_FUNCTION(Moteur, arg) {
@@ -29,10 +31,10 @@ static THD_FUNCTION(Moteur, arg) {
             pos_l_av=left_motor_get_pos(); //push le mouvement ligne droite sur l'ordi avec la distance
             pos_r_av=right_motor_get_pos();
 
-            while (left_motor_get_pos()<(pos_l_av+323))
+            while (left_motor_get_pos()<(pos_l_av+NB_COUNTER_HALF))
             {
-                 left_motor_set_speed(160);
-		        right_motor_set_speed(-160);
+                 left_motor_set_speed(200);
+		        right_motor_set_speed(-200);
             }
             	//push sur l'ordi qu'on a fait un tour
         }
@@ -47,10 +49,10 @@ static THD_FUNCTION(Moteur, arg) {
 		speed_cm_r= right_motor_get_pos() * WHEEL_PERIMETER/ NSTEP_ONE_TURN;
 		chprintf((BaseSequentialStream *)&SD3," left \r\n");
 		chprintf((BaseSequentialStream *)&SD3," %d \r\n",left_motor_get_pos());
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",speed_cm_l);
+		chprintf((BaseSequentialStream *)&SD3," %d \r\n",pos_cm_l);
 		chprintf((BaseSequentialStream *)&SD3," right \r\n");
 		chprintf((BaseSequentialStream *)&SD3," %d \r\n",right_motor_get_pos());
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",speed_cm_r);
+		chprintf((BaseSequentialStream *)&SD3," %d \r\n",pos_cm_r);
 	}
 */
 	}
