@@ -1,11 +1,11 @@
 from mathLib import Vector
 import matplotlib.pyplot as plt
 
-#Robot constants
-distance_captor_max_range = 0.4
-wheel_dist = 1
-wheel_diameter = 1
-robot_diameter = 5
+#Robot constants (in mm)
+distance_captor_max_range = 20
+wheel_dist = 53
+wheel_diameter = 13
+robot_diameter = 70
 wheel_radius = wheel_diameter/2
 robot_radius = robot_diameter/2
 
@@ -29,7 +29,7 @@ class Robot:
     def __init__(self, fig, ax, position = Vector(r=1,theta=-90), direction = 40,capteur_angles = [0,45,-45,90,-90]):
         self.fig = fig
         self.ax = ax
-        self.command = 5
+        self.command = None
         self.position = position
         self.direction = Vector(r=1,theta=direction)
 

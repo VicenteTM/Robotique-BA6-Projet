@@ -7,6 +7,11 @@ import numpy as np
 import serial
 from robotPlot import Robot
 
+NEUTRAL = 5
+FORWARD = 0
+BACKWARD = 1
+LEFT = 2
+RIGHT = 3
 
 def sendRobotCommand(port,data_to_send):
     data = np.array([data_to_send]).astype(np.int16)

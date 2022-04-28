@@ -1,27 +1,31 @@
 import sys
 import matplotlib
+
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 
-from robotPlot import Robot
+from robotPlot import Robot, robot_diameter
 from communication import serial_thread
+import communication
 from plotUtilities import goodbye
 
 
 def on_press(event):
     if event.key == 'up':
         robot.move(d_r = 1)
-        robot.command = 0
+        robot.command = communication.FORWARD
     elif event.key == 'down':
         robot.move(d_r = -1)
-        robot.command = 1
+        robot.command = communication.BACKWARD
     elif event.key == 'left':
         robot.move(d_theta = 10)
-        robot.command = 2
+        robot.command = communication.LEFT
     elif event.key == 'right':
         robot.move(d_theta = -10)
-        robot.command = 3
+        robot.command = communication.RIGHT
+    elif event.key == ' ':
+        robot.command = communication.NEUTRAL
 
 
 #handler when closing the window
@@ -67,8 +71,10 @@ def plotMovobot(fig, ax):
     receiveButton           = Button(receiveAx, 'Only control', color=colorAx, hovercolor='0.975')
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
-    ax.set_xlim([-5, 5])
-    ax.set_ylim([-5, 5])
+    sizefromrobot = 10 * robot_diameter
+
+    ax.set_xlim([-sizefromrobot, sizefromrobot])
+    ax.set_ylim([-sizefromrobot, sizefromrobot])
     ax.set_aspect('equal', adjustable='box')
 
     resetButton.on_clicked(reset)
@@ -89,6 +95,7 @@ def main():
 
     global robot
     robot = Robot(fig, ax)
+    robot.command = communication.NEUTRAL
 
     # #serial reader thread config
     # #begins the serial thread
