@@ -5,7 +5,7 @@
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value=""/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>
-<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value="target extended-remote \\.\COM3&#13;&#10;monitor swdp_scan&#13;&#10;attach 1&#13;&#10;set mem inaccessible-by-default off"/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value="target extended-remote \\.\COM6&#13;&#10;monitor swdp_scan&#13;&#10;attach 1&#13;&#10;set mem inaccessible-by-default off"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.ipAddress" value="localhost"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDevice" value="Generic TCP/IP"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadImage" value="true"/>

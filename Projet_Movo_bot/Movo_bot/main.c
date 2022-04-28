@@ -72,6 +72,7 @@ int main(void)
     proximity_start();
     calibrate_ir();
     start_moteur();
+   // start_capteur();
     //start_command_reception();
     //start_command_send();
     start_command_send_receive();
