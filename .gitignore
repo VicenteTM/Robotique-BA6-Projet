@@ -6,7 +6,6 @@
 *.list
 *.elf
 build/*
-.venv
 Notes_perso.txt
 lib/*
 Scripts_python/TP_exemples
