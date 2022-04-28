@@ -5,6 +5,12 @@
 
 #include <main.h>
 
+//static global
+static uint16_t command[1];
+
+//semaphore
+static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);
+
 // static THD_WORKING_AREA(waReceiveCommand, 1024);
 // static THD_FUNCTION(ProcessImage, arg) {
 
@@ -88,6 +94,9 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 
 void SendUint8ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
 {
+	//#ifdef SEND_FROM_MIC
+    //waits until a result must be sent to the computer
+    //wait_send_to_computer();
 	chSequentialStreamWrite(out, (uint8_t*)"START", 5);
 	chSequentialStreamWrite(out, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite(out, (uint8_t*)data, sizeof(uint16_t) * size);
@@ -98,7 +107,7 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t command[1];
+    
 
 	while(1){
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, command, 1);
@@ -107,10 +116,18 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
     	{
 			SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
     	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
+		chBSemSignal(&sendToEpuck_sem);
     	}
     }
 }
 
+void wait_send_to_epuck(void){
+	chBSemWait(&sendToEpuck_sem);
+}
+
+uint16_t get_command(void){
+	return command[0];
+}
 
 void start_command_send_receive(void)
 {
