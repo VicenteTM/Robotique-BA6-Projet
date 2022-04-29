@@ -15,6 +15,7 @@
 
 #include <send_receive.h>
 #include <moteur.h>
+#include <capteur.h>
 
 //uncomment to send the FFTs results from the real microphones
 //#define SEND_FROM_MIC
@@ -72,11 +73,12 @@ int main(void)
     proximity_start();
     calibrate_ir();
     start_moteur();
-   // start_capteur();
     //start_command_reception();
     //start_command_send();
     start_command_send_receive();
-
+    //#ifdef CAPTEUR_GRAPH
+    start_capteur();
+    //#endif
     /* Infinite loop. */
     while (1) {
     	//waits 1 second

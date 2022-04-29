@@ -4,6 +4,8 @@
 #include <usbcfg.h>
 #include <sensors\proximity.h>
 #include <main.h>
+#include <capteur.h>
+#include <send_receive.h>
 
 // static THD_WORKING_AREA(waReceiveCommand, 1024);
 // static THD_FUNCTION(ProcessImage, arg) {
@@ -23,35 +25,37 @@ static THD_FUNCTION(Capteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint32_t capteur0;
-    uint32_t capteur1;
-    uint32_t capteur2;
-    uint32_t capteur3;
-    uint32_t capteur4;
-    uint32_t capteur5;
-    uint32_t capteur6;
-    uint32_t capteur7;
-
+    uint16_t capteur0;
+    static int counter=0;
+    uint16_t data_to_send[2];
     chprintf((BaseSequentialStream *)&SD3," hey \r\n");
 
+    
+    wait_send_to_epuck();
+    capteur0=get_calibrated_prox(FRONT_R_IR); //front front right
+    data_to_send[0] = counter;
+    data_to_send[1] = capteur0;
+    SendUint8ToComputer((BaseSequentialStream *) &SD3, data_to_send, 2) ;
+    counter += 1;
+
   	while(1){
-  			capteur0=get_calibrated_prox(0); //front front right
-  		    capteur1=get_calibrated_prox(1); //front right
-  		    capteur2=get_calibrated_prox(2); //right
-  		    capteur3=get_calibrated_prox(3); //back right
-  		    capteur4=get_calibrated_prox(4); //back left
-  		    capteur5=get_calibrated_prox(5); //left
-  		    capteur6=get_calibrated_prox(6); //front left
-  		    capteur7=get_calibrated_prox(7); //front front left
-        chprintf((BaseSequentialStream *)&SD3," test \r\n");
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur0);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur1);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur2);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur3);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur4);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur5);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur6);
-        chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur7);
+            wait_send_to_epuck();
+            if (get_command()==1){
+                capteur0=get_calibrated_prox(FRONT_R_IR); //front front right
+                data_to_send[0] = counter;
+                data_to_send[1] = capteur0;
+                SendUint8ToComputer((BaseSequentialStream *) &SD3, data_to_send, 2);
+                counter += 1;
+            }
+  		    
+  		    // capteur1=get_calibrated_prox(FRONT_RIGHT_IR); //front right
+  		    // capteur2=get_calibrated_prox(RIGHT_IR); //right
+  		    // capteur3=get_calibrated_prox(BACK_RIGHT_IR); //back right
+  		    // capteur4=get_calibrated_prox(BACK_LEFT_IR); //back left
+  		    // capteur5=get_calibrated_prox(LEFT_IR); //left
+  		    // capteur6=get_calibrated_prox(FRONT_LEFT_IR); //front left
+  		    // capteur7=get_calibrated_prox(FRONT_L_IR); //front front left
+        
 	}
 }
 
