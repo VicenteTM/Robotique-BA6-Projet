@@ -2,7 +2,7 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <usbcfg.h>
-
+#include <send_receive.h>
 #include <main.h>
 
 //static global
@@ -92,7 +92,7 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 
 }
 
-void SendUint8ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
+void SendUint16ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
 {
 	//#ifdef SEND_FROM_MIC
     //waits until a result must be sent to the computer
@@ -114,7 +114,7 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
         //chprintf((BaseSequentialStream *)&SDU1,"Size: %d \r\n",size);
     	if(size == 1)
     	{
-			SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
+			//SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
     	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
 		chBSemSignal(&sendToEpuck_sem);
     	}

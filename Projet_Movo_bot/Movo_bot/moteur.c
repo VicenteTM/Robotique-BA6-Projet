@@ -35,12 +35,13 @@ static THD_FUNCTION(Moteur, arg) {
     int16_t pos_r_av=0;
     int16_t speed_correction_r = 0;
     int16_t speed_correction_l = 0;
-    int direct=X;
+    static int direction=X;
+    static uint16_t data[3];
 	while(1){
+		/*
 		capteur=get_calibrated_prox(FRONT_R_IR);
         speed_correction_r = (get_calibrated_prox(RIGHT_IR)-GOAL_DISTANCE);
         speed_correction_l = (get_calibrated_prox(LEFT_IR)-GOAL_DISTANCE);
-        /*
         if (capteur>500){
         	chprintf((BaseSequentialStream *)&SD3," wall \r\n");
             pos_l_av=left_motor_get_pos();
@@ -56,8 +57,9 @@ static THD_FUNCTION(Moteur, arg) {
             right_motor_set_speed(0);
             // chBSemSignal(&sendToComputer_sem);  //push sur l'ordi le virage
         }
+
         else{
-        */
+         */
             wait_send_to_epuck();
             switch(get_command()){
         	case FORWARD:
@@ -76,7 +78,7 @@ static THD_FUNCTION(Moteur, arg) {
             	     left_motor_set_speed(-300); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
             	     right_motor_set_speed(-300); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
             	  }
-            	direct=set_direction(BACKWARD);
+            	direction=set_direction(BACKWARD,direction);
         	    chprintf((BaseSequentialStream *)&SD3," backward \r\n");
                 break;
             case LEFT:
@@ -88,7 +90,7 @@ static THD_FUNCTION(Moteur, arg) {
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
-        	    direct=set_direction(LEFT);
+        	    direction=set_direction(LEFT,direction);
                 break;
             case RIGHT:
             	pos_l_av=left_motor_get_pos();
@@ -99,7 +101,7 @@ static THD_FUNCTION(Moteur, arg) {
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
-        	    direct=set_direction(RIGHT);
+        	    direction=set_direction(RIGHT,direction);
                 break;
             case NEUTRE:
                 left_motor_set_speed(0);
@@ -121,25 +123,29 @@ static THD_FUNCTION(Moteur, arg) {
 	}
 */
         }
+            wait_capteur_received();
+            get_data_to_send(&data[0], &data[1], &data[2], direction);
+            SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 3);
 	}
 }
-int set_direction(int move){
-    static int direction=X;
+
+int set_direction(int move,int direction){
     switch (move){
         case LEFT:
-        direction--;
-        if (direction<X)
-        	direction = M_Y;
-        break;
+        	direction--;
+        	if (direction<X)
+        		direction = M_Y;
+        	break;
         case RIGHT:
-        direction++;
-        if (direction>M_Y)
-           direction = X;
-        break;
+        	direction++;
+        	if (direction>M_Y)
+        		direction = X;
+        	break;
         case BACKWARD:
-        direction+=2;
-        if (direction>M_Y)
-           direction -= M_Y+1;
+        	direction+=2;
+        	if (direction>M_Y)
+        		direction -= M_Y+1;
+        	break;
     }
     return direction;
 }
