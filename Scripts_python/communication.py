@@ -133,6 +133,7 @@ class serial_thread(Thread):
         while(self.alive):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
+                self.robot.command = NEUTRAL
                 readcommand(self.port)
 
             elif(self.contReceive):
