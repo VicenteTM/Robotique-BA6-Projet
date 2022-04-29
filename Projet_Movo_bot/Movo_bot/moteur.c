@@ -41,8 +41,8 @@ static THD_FUNCTION(Moteur, arg) {
 		        right_motor_set_speed(-200);
             }
             chprintf((BaseSequentialStream *)&SD3," wallend \r\n");
-            left_motor_set_speed(500);
-            right_motor_set_speed(500);
+            left_motor_set_speed(0);
+            right_motor_set_speed(0);
             // chBSemSignal(&sendToComputer_sem);  //push sur l'ordi le virage
         }
         else{
@@ -102,5 +102,5 @@ static THD_FUNCTION(Moteur, arg) {
 
 void start_moteur(void)
 {
-    chThdCreateStatic(waMoteur, sizeof(waMoteur), NORMALPRIO+1, Moteur, NULL);
+    chThdCreateStatic(waMoteur, sizeof(waMoteur), NORMALPRIO+2, Moteur, NULL);
 }

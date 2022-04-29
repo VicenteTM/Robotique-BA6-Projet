@@ -40,5 +40,5 @@ static THD_FUNCTION(Capteur, arg) {
 
 void start_capteur(void)
 {
-    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+2, Capteur, NULL);    
+    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+1, Capteur, NULL);    
 }
