@@ -124,7 +124,9 @@ static THD_FUNCTION(Moteur, arg) {
 */
         }
             wait_capteur_received();
-            get_data_to_send(&data[0], &data[1], &data[2], direction);
+            data[0] = get_counter_to_send();
+            data[1] = get_capteur_to_send();
+            data[2] = direction;
             SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 3);
 	}
 }

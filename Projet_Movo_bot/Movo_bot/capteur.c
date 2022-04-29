@@ -30,7 +30,7 @@ static THD_FUNCTION(Capteur, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
     uint16_t capteur0;
-    static int counter=0;
+    uint16_t counter=0;
     chprintf((BaseSequentialStream *)&SD3," hey \r\n");
 
     
@@ -38,7 +38,7 @@ static THD_FUNCTION(Capteur, arg) {
     capteur0=get_calibrated_prox(FRONT_R_IR); //front front right
     data_to_send[0] = counter;
     data_to_send[1] = capteur0;
-    SendUint16ToComputer((BaseSequentialStream *) &SD3, data_to_send, 2) ;
+    //SendUint16ToComputer((BaseSequentialStream *) &SD3, data_to_send, 2) ;
     counter += 1;
 
   	while(1){
@@ -63,10 +63,12 @@ static THD_FUNCTION(Capteur, arg) {
 	}
 }
 
-void get_data_to_send(uint16_t **data,uint16_t **datb, uint16_t **datc,int direction){
-	*data = &data_to_send[0];
-	*datb = &data_to_send[1];
-	*datc = direction;
+uint16_t get_counter_to_send(void){
+	return data_to_send[0];
+}
+
+uint16_t get_capteur_to_send(void){
+	return data_to_send[1];
 }
 
 void start_capteur(void)
