@@ -1,3 +1,4 @@
+from platform import release
 import sys
 import matplotlib
 
@@ -27,6 +28,16 @@ def on_press(event):
     elif event.key == ' ':
         robot.command = communication.NEUTRAL
 
+def release(event):
+    if event.key == 'up':
+        robot.command = communication.NEUTRAL
+    elif event.key == 'down':
+        robot.command = communication.NEUTRAL
+    elif event.key == 'left':
+        robot.command = communication.NEUTRAL
+    elif event.key == 'right':
+        robot.command = communication.NEUTRAL
+
 
 #handler when closing the window
 def handle_close(evt):
@@ -46,6 +57,7 @@ def reset(event):
 
 def plotMovobot(fig, ax):
     fig.canvas.mpl_connect('key_press_event', on_press)
+    fig.canvas.mpl_connect('key_release_event', release)
     fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
     mng = plt.get_current_fig_manager()
     mng.window.resizable(False, False)
@@ -62,13 +74,13 @@ def plotMovobot(fig, ax):
     colorAx             = 'lightgoldenrodyellow'
     resetAx             = plt.axes([0.8, 0.025, 0.1, 0.04])
     sendAndReceiveAx    = plt.axes([0.1, 0.025, 0.15, 0.04])
-    receiveAx           = plt.axes([0.25, 0.025, 0.1, 0.04])
+    ploCaptorDist       = plt.axes([0.25, 0.025, 0.1, 0.04])
     stopAx              = plt.axes([0.35, 0.025, 0.1, 0.04])
 
     #config of the buttons, sliders and radio buttons
     resetButton             = Button(resetAx, 'Reset sinus', color=colorAx, hovercolor='0.975')
     sendAndReceiveButton    = Button(sendAndReceiveAx, 'Control and read', color=colorAx, hovercolor='0.975')
-    receiveButton           = Button(receiveAx, 'Only control', color=colorAx, hovercolor='0.975')
+    captorDistButton        = Button(ploCaptorDist, 'Plot Dist Captor', color=colorAx, hovercolor='0.975')
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
     sizefromrobot = 10 * robot_diameter
@@ -79,7 +91,7 @@ def plotMovobot(fig, ax):
 
     resetButton.on_clicked(reset)
     sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
-    receiveButton.on_clicked(reader_thd.setContReceive)
+    captorDistButton.on_clicked(reader_thd.setContPlotDCaptor)
     stop.on_clicked(reader_thd.stop_reading)
 
     plt.show()

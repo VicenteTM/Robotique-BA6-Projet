@@ -6,6 +6,7 @@ import time
 import numpy as np
 import serial
 from robotPlot import Robot
+import plotDCaptor
 
 NEUTRAL = 5
 FORWARD = 0
@@ -32,7 +33,7 @@ def sendRobotCommand(port,data_to_send):
     print('sent !')
 
 # #reads the FFT in float32 from the serial
-def readFloatSerial(port):
+def readUInt16Serial(port):
 
     state = 0
 
@@ -104,9 +105,14 @@ def readFloatSerial(port):
 
 
 def readcommand(port):
-    command = readFloatSerial(port) 
+    command = readUInt16Serial(port) 
     if(len(command)>0):
         print(command)
+    return
+
+def readCaptor(port):
+    new_data = readUInt16Serial(port) 
+    return new_data
 
 # #thread used to control the communication part
 class serial_thread(Thread):
@@ -115,7 +121,7 @@ class serial_thread(Thread):
     def __init__(self, port, robot):
         Thread.__init__(self)
         self.robot = robot
-        self.contReceive = False
+        self.contReceiveCaptor = False
         self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
@@ -131,12 +137,17 @@ class serial_thread(Thread):
     def run(self):
         
         while(self.alive):
-            if(self.contSendAndReceive):
+            if(self.contSendAndReceive and self.contReceiveCaptor):
                 sendRobotCommand(self.port, self.robot.command)
-                self.robot.command = NEUTRAL
-                readcommand(self.port)
+                new_data = readCaptor(self.port)
+                # if not new_data == []:
+                plotCaptor(new_data)
 
-            elif(self.contReceive):
+            elif(self.contSendAndReceive):
+                sendRobotCommand(self.port, self.robot.command)
+                time.sleep(0.3)
+                print(self.robot.command)
+            elif(self.contReceiveCaptor):
                 readcommand(self.port)
             else:
                 #flush the serial
@@ -145,21 +156,24 @@ class serial_thread(Thread):
 
     #enables the continuous reading
     #and disables the continuous sending and receiving
-    def setContReceive(self, val):  
-        self.contSendAndReceive = False
-        self.contReceive = True
+    def setContPlotDCaptor(self, val):  
+        self.contSendAndReceive = True
+        self.contReceiveCaptor = True
+        plotDCaptor.newplot()  
+        plotCaptor.dist = []
+        plotCaptor.intensity = []
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
     def setContSendAndReceive(self, val):
         self.contSendAndReceive = True
-        self.contReceive = False
+        self.contReceiveCaptor = False
 
     #disables the continuous reading
     #and disables the continuous sending and receiving
     def stop_reading(self, val):
         self.contSendAndReceive = False
-        self.contReceive = False
+        self.contReceiveCaptor = False
 
     #tell the plot need to be updated
     def tell_to_update_plot(self):
@@ -182,3 +196,10 @@ class serial_thread(Thread):
                 self.port.read(self.port.inWaiting())
                 time.sleep(0.01)
             self.port.close()
+
+def plotCaptor(new_data):
+    x=np.random.random(size = 1)[0]
+    y=np.random.random(size = 1)[0]
+    plotCaptor.dist.append(x)
+    plotCaptor.intensity.append(y)
+    plotDCaptor.plot(plotCaptor.dist,plotCaptor.intensity)
