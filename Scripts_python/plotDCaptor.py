@@ -42,27 +42,39 @@ def plot(dist, intensity):
 class plotDistCaptor(Thread):
 
     #init function called when the thread begins
-    def __init__(self):
+    def __init__(self,fig1):
         Thread.__init__(self)
         self.dist = []
         self.intensity = []
         self.alive = True
+        self.fig1 = fig1
 
     #function called after the init
     def run(self):
         x = np.linspace(0, 10*np.pi, 100)
         y = np.sin(x)
+        
         plt.ion()
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        line1, = ax.plot(x, y, 'ro')
+        ax = self.fig1.add_subplot(111)
+        line1, = ax.plot(x, y, 'b-')
         while(self.alive):
             for phase in np.linspace(0, 10*np.pi, 100):
-                line1.set_ydata(self.dist)
-                fig.canvas.draw()
-                fig.canvas.flush_events()
-            time.sleep(1)
-
+                line1.set_ydata(np.sin(0.5 * x + phase))
+                self.fig1.canvas.draw()
+                self.fig1.canvas.flush_events()
+        
+def test(fig1,ax):
+    x = np.linspace(0, 10*np.pi, 100)
+    y = np.sin(x)
+    
+    plt.ion()
+    ax.clear()
+    ax1 = fig1.add_subplot(111)
+    line1, = ax1.plot(x, y, 'b-')
+    for phase in np.linspace(0, 10*np.pi, 100):
+        line1.set_ydata(np.sin(0.5 * x + phase))
+        fig1.canvas.draw()
+        fig1.canvas.flush_events()
 
 
     #tell the plot need to be updated
@@ -81,8 +93,4 @@ class plotDistCaptor(Thread):
     def stop(self):
         self.alive = False
         self.join()
-        if(self.port.isOpen()):
-            while(self.port.inWaiting() > 0):
-                self.port.read(self.port.inWaiting())
-                time.sleep(0.01)
-            self.port.close()
+

@@ -1,6 +1,9 @@
 from platform import release
 import sys
+import time
 import matplotlib
+
+from plotDCaptor import plotDistCaptor
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -44,6 +47,8 @@ def handle_close(evt):
     # we stop the serial thread
     reader_thd.stop()
     print(goodbye)
+
+
 
 #update the plots
 def update_plot():
@@ -93,8 +98,8 @@ def plotMovobot(fig, ax):
     sendAndReceiveButton.on_clicked(reader_thd.setContSendAndReceive)
     captorDistButton.on_clicked(reader_thd.setContPlotDCaptor)
     stop.on_clicked(reader_thd.stop_reading)
+    plt.show()           
 
-    plt.show()
 
 def main():
     # #test if the serial port as been given as argument in the terminal
@@ -112,7 +117,7 @@ def main():
     # #serial reader thread config
     # #begins the serial thread
     global reader_thd
-    reader_thd = serial_thread(sys.argv[1], robot)
+    reader_thd = serial_thread(sys.argv[1], robot, fig, ax)
     reader_thd.start()
 
     plotMovobot(fig, ax)

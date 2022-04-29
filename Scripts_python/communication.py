@@ -120,13 +120,15 @@ def readCaptor(port):
 class serial_thread(Thread):
 
     #init function called when the thread begins
-    def __init__(self, port, robot: Robot):
+    def __init__(self, port, robot: Robot, fig, ax):
         Thread.__init__(self)
         self.robot = robot
         self.contReceiveCaptor = False
         self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
+        self.ax = ax
+        self.fig = fig
 
         print('Connecting to port {}'.format(port))
         
@@ -144,6 +146,7 @@ class serial_thread(Thread):
                 # new_data = readCaptor(self.port)
                 # # if not new_data == []:
                 # plotCaptor(new_data)
+                plotDCaptor.test(self.fig,self.ax)
                 time.sleep(0.3)
 
             elif(self.contSendAndReceive):
@@ -162,11 +165,9 @@ class serial_thread(Thread):
     def setContPlotDCaptor(self, val):  
         self.contSendAndReceive = True
         self.contReceiveCaptor = True
-        # plotDCaptor.newplot()  
-        plotCaptor.dist = 0
-        plotCaptor.intensity = []
-        plot = plotDistCaptor()
-        plot.start()
+        # global plot
+        # plot = plotDistCaptor(self.figc)
+        # plot.start()
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
@@ -212,3 +213,6 @@ def plotCaptor(new_data):
     # plotCaptor.intensity = np.linspace(0, 6*np.pi, 100)
     # plotDCaptor.plot(linespace[plotCaptor.dist],plotCaptor.intensity)
     plotDCaptor.newplot(False)
+
+def handle_close_plotDCaptor(evt):
+    plot.stop()
