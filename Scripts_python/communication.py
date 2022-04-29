@@ -5,6 +5,7 @@ from threading import Thread
 import time
 import numpy as np
 import serial
+from plotDCaptor import plotDistCaptor
 from robotPlot import Robot
 import plotDCaptor
 
@@ -98,6 +99,7 @@ def readUInt16Serial(port):
             i = i+1
 
         print('received !')
+        print(data)
         return data
     else:
         print('Timout...')
@@ -118,7 +120,7 @@ def readCaptor(port):
 class serial_thread(Thread):
 
     #init function called when the thread begins
-    def __init__(self, port, robot):
+    def __init__(self, port, robot: Robot):
         Thread.__init__(self)
         self.robot = robot
         self.contReceiveCaptor = False
@@ -138,15 +140,16 @@ class serial_thread(Thread):
         
         while(self.alive):
             if(self.contSendAndReceive and self.contReceiveCaptor):
-                sendRobotCommand(self.port, self.robot.command)
-                new_data = readCaptor(self.port)
-                # if not new_data == []:
-                plotCaptor(new_data)
+                # sendRobotCommand(self.port, self.robot.command)
+                # new_data = readCaptor(self.port)
+                # # if not new_data == []:
+                # plotCaptor(new_data)
+                time.sleep(0.3)
 
             elif(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
                 time.sleep(0.3)
-                print(self.robot.command)
+                readCaptor(self.port)
             elif(self.contReceiveCaptor):
                 readcommand(self.port)
             else:
@@ -159,9 +162,11 @@ class serial_thread(Thread):
     def setContPlotDCaptor(self, val):  
         self.contSendAndReceive = True
         self.contReceiveCaptor = True
-        plotDCaptor.newplot()  
-        plotCaptor.dist = []
+        # plotDCaptor.newplot()  
+        plotCaptor.dist = 0
         plotCaptor.intensity = []
+        plot = plotDistCaptor()
+        plot.start()
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
@@ -198,8 +203,12 @@ class serial_thread(Thread):
             self.port.close()
 
 def plotCaptor(new_data):
-    x=np.random.random(size = 1)[0]
-    y=np.random.random(size = 1)[0]
-    plotCaptor.dist.append(x)
-    plotCaptor.intensity.append(y)
-    plotDCaptor.plot(plotCaptor.dist,plotCaptor.intensity)
+    # x=np.random.random(size = 1)[0]
+    # y=np.random.random(size = 1)[0]
+    # # plotCaptor.dist.append(x)
+    # # plotCaptor.intensity.append(y)
+    # linespace = np.linspace(0, 10*np.pi, 500)
+    # plotCaptor.dist =+ 1
+    # plotCaptor.intensity = np.linspace(0, 6*np.pi, 100)
+    # plotDCaptor.plot(linespace[plotCaptor.dist],plotCaptor.intensity)
+    plotDCaptor.newplot(False)
