@@ -13,18 +13,22 @@
 #include <sensors/proximity.h>
 #include <arm_math.h>
 
+#include <msgbus/messagebus.h>
+#include <i2c_bus.h>
+#include <sensors/imu.h>
+
 #include <send_receive.h>
 #include <moteur.h>
 #include <capteur.h>
-
+#include <impact.h>
 //uncomment to send the FFTs results from the real microphones
 //#define SEND_FROM_MIC
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
-messagebus_t bus;
-MUTEX_DECL(bus_lock);
-CONDVAR_DECL(bus_condvar);
+//messagebus_t bus;
+//MUTEX_DECL(bus_lock);
+//CONDVAR_DECL(bus_condvar);
 
 static void serial_start(void)
 {
@@ -61,7 +65,7 @@ int main(void)
     chSysInit();
     mpu_init();
     /** Inits the Inter Process Communication bus. */
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    //messagebus_init(&bus, &bus_lock, &bus_condvar);
     //starts the serial communication
     serial_start();
     //starts the USB communication
@@ -70,6 +74,7 @@ int main(void)
     timer12_start();
     //inits the motors
     motors_init();
+    impact_start();
     proximity_start();
     calibrate_ir();
     start_moteur();

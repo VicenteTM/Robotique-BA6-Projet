@@ -8,6 +8,7 @@
 #include <moteur.h>
 #include <send_receive.h>
 #include "capteur.h"
+#include <impact.h>
 
 enum {X,Y,M_X,M_Y};
 
@@ -36,7 +37,8 @@ static THD_FUNCTION(Moteur, arg) {
     int16_t speed_correction_r = 0;
     int16_t speed_correction_l = 0;
     static int direction=X;
-    static uint16_t data[3];
+    int distance=0;
+    static uint16_t data[4];
 	while(1){
 		/*
 		capteur=get_calibrated_prox(FRONT_R_IR);
@@ -61,23 +63,31 @@ static THD_FUNCTION(Moteur, arg) {
         else{
          */
             wait_send_to_epuck();
+            if (get_impact()){
+                   	 left_motor_set_speed(0);
+                   	 right_motor_set_speed(0);
+                   	 chprintf((BaseSequentialStream *)&SD3," impact \r\n");
+                }
+            else{
             switch(get_command()){
         	case FORWARD:
         		pos_r_av=right_motor_get_pos();
         		while (right_motor_get_pos()<(pos_r_av+77))
         		            {
-                left_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
-        	    right_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
+                left_motor_set_speed(400); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
+        	    right_motor_set_speed(400); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
         		            }
+        		distance = right_motor_get_pos()-pos_r_av;
         	    chprintf((BaseSequentialStream *)&SD3," forward \r\n"); // send to the computer that we moved 1cm
                 break;
             case BACKWARD:
             	pos_r_av=right_motor_get_pos();
             	while (right_motor_get_pos()>(pos_r_av-77))
             	         {
-            	     left_motor_set_speed(-300); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
-            	     right_motor_set_speed(-300); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
+            	     left_motor_set_speed(-400); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
+            	     right_motor_set_speed(-400); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
             	  }
+            	distance = right_motor_get_pos()-pos_r_av;
             	direction=set_direction(BACKWARD,direction);
         	    chprintf((BaseSequentialStream *)&SD3," backward \r\n");
                 break;
@@ -90,6 +100,7 @@ static THD_FUNCTION(Moteur, arg) {
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
+        	    distance=0;
         	    direction=set_direction(LEFT,direction);
                 break;
             case RIGHT:
@@ -101,12 +112,14 @@ static THD_FUNCTION(Moteur, arg) {
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
+        	    distance=0;
         	    direction=set_direction(RIGHT,direction);
                 break;
             case NEUTRE:
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
         	    chprintf((BaseSequentialStream *)&SD3," stop \r\n");
+        	    distance=0;
                 break;
         	
        // }
@@ -127,7 +140,9 @@ static THD_FUNCTION(Moteur, arg) {
             data[0] = get_counter_to_send();
             data[1] = get_capteur_to_send();
             data[2] = direction;
-            SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 3);
+            data[3] = distance;
+            SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 4);
+            }
 	}
 }
 
