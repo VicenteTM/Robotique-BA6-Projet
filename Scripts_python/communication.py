@@ -5,6 +5,7 @@ from threading import Thread
 import time
 import numpy as np
 import serial
+from captorDistance import CaptorDist
 from robotPlot import Robot
 
 NEUTRAL = 5
@@ -115,7 +116,7 @@ class serial_thread(Thread):
     def __init__(self, port, robot):
         Thread.__init__(self)
         self.robot = robot
-        self.contReceiveCaptor = False
+        self.contReceiveCaptorD = False
         self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
@@ -129,14 +130,19 @@ class serial_thread(Thread):
             sys.exit(0)
     #function called after the init
     def run(self):
-        
         while(self.alive):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
                 time.sleep(0.3)
 
             elif(self.contReceiveCaptorD):
-                readcommand(self.port)
+                sendRobotCommand(self.port, self.robot.command)
+                # newvalues = readUInt16Serial(self.port) 
+                newvalues = [np.random.randint(0,5*100)/100,np.random.randint(0,4000)]
+                self.captorD.addValues(newvalues)
+                dist, intensity = self.captorD.get_values()
+                self.line_capt_d.set_xdata(dist)
+                self.line_capt_d.set_ydata(intensity)
             else:
                 #flush the serial
                 self.port.read(self.port.inWaiting())
@@ -144,19 +150,21 @@ class serial_thread(Thread):
 
     #enables the continuous reading
     #and disables the continuous sending and receiving
-    def setContReceiveCaptorD(self, val):  
+    def setContReceiveCaptorD(self, line_capt_d):  
         self.contSendAndReceive = False
         self.contReceiveCaptorD = True
+        self.line_capt_d = line_capt_d
+        self.captorD = CaptorDist()
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
-    def setContSendAndReceive(self, val):
+    def setContSendAndReceive(self):
         self.contSendAndReceive = True
         self.contReceiveCaptorD = False
 
     #disables the continuous reading
     #and disables the continuous sending and receiving
-    def stop_reading(self, val):
+    def stop_reading(self):
         self.contSendAndReceive = False
         self.contReceiveCaptorD = False
 
