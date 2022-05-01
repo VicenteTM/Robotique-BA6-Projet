@@ -82,7 +82,7 @@ int main(void)
     //start_command_send();
     start_command_send_receive();
     //#ifdef CAPTEUR_GRAPH
-    start_capteur();
+    start_capteur(); // a remettre c'est pour envoyer les data
     //#endif
     /* Infinite loop. */
     while (1) {

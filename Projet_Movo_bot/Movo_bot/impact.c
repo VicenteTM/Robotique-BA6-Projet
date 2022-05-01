@@ -137,7 +137,7 @@ void impact_start(void)
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     //to change the priority of the thread invoking the function. The main function in this case
     //chThdSetPriority(NORMALPRIO+2);
-    chThdCreateStatic(waImpact, sizeof(waImpact), NORMALPRIO, Impact, NULL);
+    //chThdCreateStatic(waImpact, sizeof(waImpact), NORMALPRIO, Impact, NULL);
     //wait 2 sec to be sure the e-puck is in a stable position
     chThdSleepMilliseconds(2000);
     //imu_compute_offset(imu_topic, NB_SAMPLES_OFFSET);

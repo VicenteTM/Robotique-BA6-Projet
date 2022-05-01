@@ -24,13 +24,14 @@ enum {X,Y,M_X,M_Y};
 #define LEFT 2
 #define RIGHT 3
 #define NEUTRE 5
+#define CALIBRATION 6
 
 static THD_WORKING_AREA(waMoteur, 1024);
 static THD_FUNCTION(Moteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t capteur;
+    uint16_t send=0;
     uint32_t capteur_mm;
     int16_t pos_l_av=0;
     int16_t pos_r_av=0;
@@ -38,7 +39,7 @@ static THD_FUNCTION(Moteur, arg) {
     int16_t speed_correction_l = 0;
     static int direction=X;
     int distance=0;
-    static uint16_t data[4];
+    static uint16_t data[5];
 	while(1){
 		/*
 		capteur=get_calibrated_prox(FRONT_R_IR);
@@ -78,6 +79,7 @@ static THD_FUNCTION(Moteur, arg) {
         	    right_motor_set_speed(400); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
         		            }
         		distance = right_motor_get_pos()-pos_r_av;
+        		send=1;
         	    chprintf((BaseSequentialStream *)&SD3," forward \r\n"); // send to the computer that we moved 1cm
                 break;
             case BACKWARD:
@@ -90,6 +92,7 @@ static THD_FUNCTION(Moteur, arg) {
             	distance = right_motor_get_pos()-pos_r_av;
             	direction=set_direction(BACKWARD,direction);
         	    chprintf((BaseSequentialStream *)&SD3," backward \r\n");
+        	    send=1;
                 break;
             case LEFT:
             	pos_r_av=right_motor_get_pos();
@@ -102,6 +105,7 @@ static THD_FUNCTION(Moteur, arg) {
         	    right_motor_set_speed(0);
         	    distance=0;
         	    direction=set_direction(LEFT,direction);
+        	    send=1;
                 break;
             case RIGHT:
             	pos_l_av=left_motor_get_pos();
@@ -114,12 +118,31 @@ static THD_FUNCTION(Moteur, arg) {
         	    right_motor_set_speed(0);
         	    distance=0;
         	    direction=set_direction(RIGHT,direction);
+        	    send=1;
                 break;
             case NEUTRE:
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
         	    chprintf((BaseSequentialStream *)&SD3," stop \r\n");
         	    distance=0;
+        	    send=0;
+                break;
+            case CALIBRATION:
+                pos_r_av=right_motor_get_pos();
+                while (right_motor_get_pos()<(pos_r_av+385))
+        		    {
+                    left_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
+        	        right_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
+                    calibrate();
+                    wait_capteur_received();
+                    data[0] = get_capteur_right_to_send();
+                    data[1] = get_capteur_left_to_send();
+                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
+        		    }
+                left_motor_set_speed(0);
+        	    right_motor_set_speed(0);
+        	    distance=0;
+        	    send=0;
                 break;
         	
        // }
@@ -136,13 +159,17 @@ static THD_FUNCTION(Moteur, arg) {
 	}
 */
         }
-            wait_capteur_received();
-            data[0] = get_counter_to_send();
-            data[1] = get_capteur_to_send();
-            data[2] = direction;
-            data[3] = distance;
-            SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 4);
+            if (send){
+                wait_capteur_received();
+                data[0] = get_counter_to_send();
+                data[1] = get_capteur_right_to_send();
+                data[2] = get_capteur_left_to_send();
+                data[3] = direction;
+                data[4] = get_command();
+                SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 5);
+                send=0;
             }
+         }
 	}
 }
 

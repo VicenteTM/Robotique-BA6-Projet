@@ -67,8 +67,18 @@ uint16_t get_counter_to_send(void){
 	return data_to_send[0];
 }
 
-uint16_t get_capteur_to_send(void){
+uint16_t get_capteur_right_to_send(void){
 	return data_to_send[1];
+}
+
+uint16_t get_capteur_left_to_send(void){
+	return data_to_send[2];
+}
+
+void calibrate(void){
+    data_to_send[1] = get_calibrated_prox(FRONT_R_IR); //front front right
+    data_to_send[2] = get_calibrated_prox(FRONT_L_IR); //front front left
+    chBSemSignal(&capteur_Received_sem);
 }
 
 void start_capteur(void)
