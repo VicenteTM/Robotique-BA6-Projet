@@ -32,7 +32,7 @@ def sendRobotCommand(port,data_to_send):
     print('sent !')
 
 # #reads the FFT in float32 from the serial
-def readFloatSerial(port):
+def readUInt16Serial(port):
 
     state = 0
 
@@ -104,7 +104,7 @@ def readFloatSerial(port):
 
 
 def readcommand(port):
-    command = readFloatSerial(port) 
+    command = readUInt16Serial(port) 
     if(len(command)>0):
         print(command)
 
@@ -115,7 +115,7 @@ class serial_thread(Thread):
     def __init__(self, port, robot):
         Thread.__init__(self)
         self.robot = robot
-        self.contReceive = False
+        self.contReceiveCaptor = False
         self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
@@ -133,10 +133,9 @@ class serial_thread(Thread):
         while(self.alive):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
-                self.robot.command = NEUTRAL
-                readcommand(self.port)
+                time.sleep(0.3)
 
-            elif(self.contReceive):
+            elif(self.contReceiveCaptorD):
                 readcommand(self.port)
             else:
                 #flush the serial
@@ -145,21 +144,21 @@ class serial_thread(Thread):
 
     #enables the continuous reading
     #and disables the continuous sending and receiving
-    def setContReceive(self, val):  
+    def setContReceiveCaptorD(self, val):  
         self.contSendAndReceive = False
-        self.contReceive = True
+        self.contReceiveCaptorD = True
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
     def setContSendAndReceive(self, val):
         self.contSendAndReceive = True
-        self.contReceive = False
+        self.contReceiveCaptorD = False
 
     #disables the continuous reading
     #and disables the continuous sending and receiving
     def stop_reading(self, val):
         self.contSendAndReceive = False
-        self.contReceive = False
+        self.contReceiveCaptorD = False
 
     #tell the plot need to be updated
     def tell_to_update_plot(self):
