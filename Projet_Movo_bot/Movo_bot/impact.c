@@ -10,7 +10,7 @@
 #include <send_receive.h>
 
 #define NB_SAMPLES_OFFSET     200
-
+    
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
@@ -41,10 +41,10 @@ static THD_FUNCTION(Impact, arg) {
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
     imu_msg_t imu_values;
      while(1){
-    	 //wait_send_to_epuck();
+    	 wait_send_to_epuck();
     	 messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
     	 show_gravity(&imu_values);
-    	 chThdSleepMilliseconds(500);
+    	 //chThdSleepMilliseconds(500);
     }
 }
 
