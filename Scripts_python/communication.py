@@ -5,7 +5,7 @@ from threading import Thread
 import time
 import numpy as np
 import serial
-from captorsPlot import CaptorDist
+from captorsPlot import CaptorDist, LiveIMU
 from robotPlot import Robot
 
 NEUTRAL = 5
@@ -117,6 +117,7 @@ class serial_thread(Thread):
         Thread.__init__(self)
         self.robot = robot
         self.contReceiveCaptorD = False
+        self.contReceiveIMU = False
         self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
@@ -134,15 +135,22 @@ class serial_thread(Thread):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
                 time.sleep(0.3)
-
             elif(self.contReceiveCaptorD):
                 sendRobotCommand(self.port, self.robot.command)
                 # newvalues = readUInt16Serial(self.port) 
-                newvalues = [np.random.randint(0,5*100)/100,np.random.randint(0,4000)]
+                newvalues = [np.random.randint(0,50*100)/100,np.random.randint(0,4000*100)/100]
                 self.captorD.addValues(newvalues)
                 dist, intensity = self.captorD.get_values()
                 self.line_capt_d.set_xdata(dist)
                 self.line_capt_d.set_ydata(intensity)
+            elif(self.contReceiveIMU):
+                sendRobotCommand(self.port, self.robot.command)
+                # newvalues = readUInt16Serial(self.port) 
+                newvalue = np.random.randint(0,30*100)/100
+                self.liveIMU.addValue(newvalue)
+                time_l, intensity = self.liveIMU.get_values()
+                self.line_live_IMU.set_xdata(time_l)
+                self.line_live_IMU.set_ydata(intensity)
             else:
                 #flush the serial
                 self.port.read(self.port.inWaiting())
@@ -153,6 +161,7 @@ class serial_thread(Thread):
     def setContReceiveCaptorD(self, line_capt_d):  
         self.contSendAndReceive = False
         self.contReceiveCaptorD = True
+        self.contReceiveIMU = False
         self.line_capt_d = line_capt_d
         self.captorD = CaptorDist()
 
@@ -161,12 +170,21 @@ class serial_thread(Thread):
     def setContSendAndReceive(self):
         self.contSendAndReceive = True
         self.contReceiveCaptorD = False
+        self.contReceiveIMU = False
+        
+    def setContLiveIMU(self, line_live_IMU):
+        self.contSendAndReceive = False
+        self.contReceiveCaptorD = False
+        self.contReceiveIMU = True
+        self.line_live_IMU = line_live_IMU
+        self.liveIMU = LiveIMU()
 
     #disables the continuous reading
     #and disables the continuous sending and receiving
     def stop_reading(self):
         self.contSendAndReceive = False
         self.contReceiveCaptorD = False
+        self.contReceiveIMU = False
 
     #tell the plot need to be updated
     def tell_to_update_plot(self):

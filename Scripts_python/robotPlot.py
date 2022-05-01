@@ -16,9 +16,7 @@ class Capteur_dist:
         self.angle_rel = angle_rel
         self.direction.r = distance_captor_max_range
         self.arrow = plt.arrow(self.position.x, self.position.y, self.direction.x, self.direction.y, length_includes_head = True, width = 0.01)
-
         self.captions = []
-        self.add_caption(100)
 
     def update(self,position,direction):
         self.position = position
