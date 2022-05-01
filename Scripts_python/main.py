@@ -23,9 +23,12 @@ def plotDCCallback(val):
         fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
         fig_plotDCaptor.canvas.mpl_connect('key_release_event', release)
         fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plot) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotDCaptor.set_xlim([0, 5])
+        ax_plotDCaptor.set_xlim([0, 50])
         ax_plotDCaptor.set_ylim([0, 4000])
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
+        plt.title("E-Puck2 distance captor caracteristic")
+        plt.xlabel("X (in mm)")
+        plt.ylabel("Y (in mm)")
         reader_thd.setContReceiveCaptorD(line_capt_d)
         plt.show()
         DCaptor_on = True
@@ -36,10 +39,10 @@ def plotDCCallback(val):
 
 def on_press(event):
     if event.key == 'up':
-        robot.move(d_r = 1)
+        robot.move(d_r = 20)
         robot.command = communication.FORWARD
     elif event.key == 'down':
-        robot.move(d_r = -1)
+        robot.move(d_r = -20)
         robot.command = communication.BACKWARD
     elif event.key == 'left':
         robot.move(d_theta = 10)
@@ -87,10 +90,16 @@ def update_plot():
 
 #reset the sinus plot
 def reset(event):
-    return
+    robot.reset()
 
 
 def plotMovobot(fig_r, ax_r):
+
+    plt.title("E-Puck2 position")
+    plt.xlabel("X (in mm)")
+    plt.ylabel("Y (in mm)")
+    
+    plt.grid(color = 'green', linestyle = '--', linewidth = 0.5)
     fig_r.canvas.mpl_connect('key_press_event', on_press)
     fig_r.canvas.mpl_connect('key_release_event', release)
     fig_r.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c

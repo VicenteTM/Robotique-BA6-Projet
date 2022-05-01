@@ -5,7 +5,7 @@ from threading import Thread
 import time
 import numpy as np
 import serial
-from captorDistance import CaptorDist
+from captorsPlot import CaptorDist
 from robotPlot import Robot
 
 NEUTRAL = 5
