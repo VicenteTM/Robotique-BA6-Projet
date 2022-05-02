@@ -10,16 +10,18 @@ import communication
 from plotUtilities import goodbye
 
 def saveCalibrationCallback(val):
-    with open('calibration.txt', 'w') as doc:
-        doc.write('Distance: [')
-        for dist in reader_thd.captorD.dist:
-            doc.write(f'{dist}, ')
-        doc.write('] \n')
+    global DCaptor_on
+    if DCaptor_on is True:
+        with open('calibration.txt', 'w') as doc:
+            doc.write('Distance: [')
+            for dist in reader_thd.captorD.dist:
+                doc.write(f'{dist}, ')
+            doc.write('] \n')
 
-        doc.write('Intensity: [')
-        for inten in reader_thd.captorD.intensity:
-            doc.write(f'{inten}, ')
-        doc.write('] \n')
+            doc.write('Intensity: [')
+            for inten in reader_thd.captorD.intensity:
+                doc.write(f'{inten}, ')
+            doc.write('] \n')
 
 def sendAndReceiveCallback(val):
     
@@ -65,10 +67,10 @@ def plotDCCallback(val):
         plt.ylabel("Intensity")
 
         
-        colorAx             = 'lightgoldenrodyellow'
-        saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
-        saveCalibrationButton    = Button(saveCalibrationAx, 'Save calibration', color=colorAx, hovercolor='0.975')
-        saveCalibrationButton.on_clicked(saveCalibrationCallback)
+        # colorAx             = 'lightgoldenrodyellow'
+        # saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
+        # saveCalibrationButton    = Button(saveCalibrationAx, 'Save', color=colorAx, hovercolor='0.975')
+        # saveCalibrationButton.on_clicked(saveCalibrationCallback)
 
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         reader_thd.setContReceiveCaptorD(line_capt_d)
@@ -161,9 +163,9 @@ def update_plot():
         fig_r.canvas.draw_idle()
         reader_thd.plot_updated()
     if DCaptor_on:
-        fig_plotDCaptor.canvas.draw_idle()
-        #fig_plotDCaptor.canvas.draw()
-        #fig_plotDCaptor.canvas.flush_events()
+        # fig_plotDCaptor.canvas.draw_idle()
+        fig_plotDCaptor.canvas.draw()
+        fig_plotDCaptor.canvas.flush_events()
     if LiveIMU_on:
         fig_plotLiveIMU.canvas.draw()
         fig_plotLiveIMU.canvas.flush_events()
@@ -207,8 +209,8 @@ def plotMovobot(fig_r, ax_r):
     #config of the buttons, sliders and radio buttons
     resetButton             = Button(resetAx, 'Reset Plot', color=colorAx, hovercolor='0.975')
     sendAndReceiveButton    = Button(sendAndReceiveAx, 'Control and read', color=colorAx, hovercolor='0.975')
-    captorDistButton        = Button(plotCaptorDistAx, 'Plot Dist Captor', color=colorAx, hovercolor='0.975')
-    captorLIMUButton        = Button(plotLiveIMUAx, 'Plot Live IMU', color=colorAx, hovercolor='0.975')
+    captorDistButton        = Button(plotCaptorDistAx, 'Calib Dist Captor', color=colorAx, hovercolor='0.975')
+    captorLIMUButton        = Button(plotLiveIMUAx, 'Live IMU', color=colorAx, hovercolor='0.975')
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
     ax_r.set_aspect('equal', adjustable='box')
@@ -218,6 +220,10 @@ def plotMovobot(fig_r, ax_r):
     captorDistButton.on_clicked(plotDCCallback)
     captorLIMUButton.on_clicked(plotLiveIMUCallback)
     stop.on_clicked(stop_readingCallback)
+
+    saveAx              = plt.axes([0.65, 0.02, 0.1, 0.04],figure=fig_r)
+    save                    = Button(saveAx, 'Save', color=colorAx, hovercolor='0.975')
+    save.on_clicked(saveCalibrationCallback)
 
     
     sizefromrobot = 10 * robot_diameter
