@@ -8,6 +8,7 @@
 #include <motors.h>
 #include <impact.h>
 #include <send_receive.h>
+#include <capteur.h>
 
 #define NB_SAMPLES_OFFSET     200
     
@@ -41,7 +42,7 @@ static THD_FUNCTION(Impact, arg) {
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
     imu_msg_t imu_values;
      while(1){
-    	 wait_send_to_epuck();
+    	 wait_impact();
     	 messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
     	 show_gravity(&imu_values);
     	 //chThdSleepMilliseconds(500);
@@ -61,7 +62,9 @@ void show_gravity(imu_msg_t *imu_values){
     //variable to measure the time some functions take
     //volatile to not be optimized out by the compiler if not used
     volatile uint16_t time = 0;
-
+    uint16_t data_buffer[1];
+    data_buffer[0] = accel[Y_AXIS];
+    SendUint16ToComputer((BaseSequentialStream *) &SD3, data_buffer, 1);
      chSysLock();
      GPTD11.tim->CNT = 0;
 
@@ -137,7 +140,7 @@ void impact_start(void)
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     //to change the priority of the thread invoking the function. The main function in this case
     //chThdSetPriority(NORMALPRIO+2);
-    //chThdCreateStatic(waImpact, sizeof(waImpact), NORMALPRIO, Impact, NULL);
+    chThdCreateStatic(waImpact, sizeof(waImpact), NORMALPRIO, Impact, NULL);
     //wait 2 sec to be sure the e-puck is in a stable position
     chThdSleepMilliseconds(2000);
     //imu_compute_offset(imu_topic, NB_SAMPLES_OFFSET);

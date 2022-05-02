@@ -20,11 +20,11 @@ enum {X,Y,M_X,M_Y};
 #define NB_COUNTER_EIGHT  165 // number of step for '(� turn of the motor
 //values of the 4 commands
 #define FORWARD 0
-#define BACKWARD 1
+#define BACKWARD 6
 #define LEFT 2
 #define RIGHT 3
 #define NEUTRE 5
-#define CALIBRATION 6
+#define CALIBRATION 1
 
 static THD_WORKING_AREA(waMoteur, 1024);
 static THD_FUNCTION(Moteur, arg) {
@@ -32,7 +32,8 @@ static THD_FUNCTION(Moteur, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
     uint16_t send=0;
-    uint32_t capteur_mm;
+    uint32_t capteur_mm=0;
+    uint compteur=0;
     int16_t pos_l_av=0;
     int16_t pos_r_av=0;
     int16_t speed_correction_r = 0;
@@ -129,20 +130,22 @@ static THD_FUNCTION(Moteur, arg) {
                 break;
             case CALIBRATION:
                 pos_r_av=right_motor_get_pos();
-                while (right_motor_get_pos()<(pos_r_av+385))
+                while (right_motor_get_pos()>(pos_r_av-385))
         		    {
-                    left_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
-        	        right_motor_set_speed(200); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
+                    left_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_l applies the speed from the command and the correction for the rotation
+        	        right_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_r applies the speed from the command and the correction for the rotation
                     calibrate();
                     wait_capteur_received();
-                    data[0] = get_capteur_right_to_send();
+                    data[0] = compteur;
                     data[1] = get_capteur_left_to_send();
                     SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
+                    compteur++;
         		    }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
         	    distance=0;
         	    send=0;
+        	    compteur=0;
                 break;
         	
        // }

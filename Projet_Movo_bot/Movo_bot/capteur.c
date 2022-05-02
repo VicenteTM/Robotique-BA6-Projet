@@ -8,6 +8,7 @@
 #include <send_receive.h>
 
 static BSEMAPHORE_DECL(capteur_Received_sem, TRUE);
+static BSEMAPHORE_DECL(impact_sem, TRUE);
 
 static uint16_t data_to_send[2];
 
@@ -46,6 +47,8 @@ static THD_FUNCTION(Capteur, arg) {
             capteur0=get_calibrated_prox(FRONT_R_IR); //front front right
             data_to_send[0] = counter;
             data_to_send[1] = capteur0;
+            if (capteur0<500)
+            	chBSemSignal(&impact_sem);
             //SendUint16ToComputer((BaseSequentialStream *) &SD3, data_to_send, 2);
             //chprintf((BaseSequentialStream *)&SD3,"counter: %d \r\n", data_to_send[0]);
             // chprintf((BaseSequentialStream *)&SD3,"capteur: %d \r\n", data_to_send[1]);
@@ -88,4 +91,8 @@ void start_capteur(void)
 
 void wait_capteur_received(void){
 	chBSemWait(&capteur_Received_sem);
+}
+
+void wait_impact(void){
+	chBSemWait(&impact_sem);
 }
