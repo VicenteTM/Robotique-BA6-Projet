@@ -13,6 +13,7 @@ FORWARD = 0
 BACKWARD = 1
 LEFT = 2
 RIGHT = 3
+DCCALIBRATION = 6
 
 def sendRobotCommand(port,data_to_send):
     data = np.array([data_to_send]).astype(np.int16)
@@ -98,16 +99,18 @@ def readUInt16Serial(port):
             i = i+1
 
         print('received !')
+        data = [x[0] for x in data]
         return data
     else:
         print('Timout...')
         return []
 
 
-def readcommand(port):
-    command = readUInt16Serial(port) 
-    if(len(command)>0):
-        print(command)
+def readfromrobot(port):
+    value = readUInt16Serial(port) 
+    if(len(value)>0):
+        print(value)
+    return value
 
 # #thread used to control the communication part
 class serial_thread(Thread):
