@@ -39,7 +39,7 @@ def readUInt16Serial(port):
     state = 0
 
     while(state != 5):
-
+        
         #reads 1 byte
         c1 = port.read(1)
         #timeout condition
@@ -129,6 +129,7 @@ class serial_thread(Thread):
         
         try:
             self.port = serial.Serial(port, timeout=0.5)
+            self.port.set_buffer_size(rx_size = 65536, tx_size = 65536)
         except:
             print('Cannot connect to the e-puck2')
             sys.exit(0)
@@ -137,15 +138,16 @@ class serial_thread(Thread):
         while(self.alive):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
-                time.sleep(0.3)
+                newvalues = readfromrobot(self.port) 
             elif(self.contReceiveCaptorD):
                 sendRobotCommand(self.port, self.robot.command)
-                # newvalues = readUInt16Serial(self.port) 
-                newvalues = [np.random.randint(0,50*100)/100,np.random.randint(0,4000*100)/100]
-                self.captorD.addValues(newvalues)
-                dist, intensity = self.captorD.get_values()
-                self.line_capt_d.set_xdata(dist)
-                self.line_capt_d.set_ydata(intensity)
+                newvalues = readfromrobot(self.port) 
+                # newvalues = [np.random.randint(0,2000),np.random.randint(0,4000)]
+                if not newvalues == []:
+                    self.captorD.addValues(newvalues)
+                    dist, intensity = self.captorD.get_values()
+                    self.line_capt_d.set_xdata(dist)
+                    self.line_capt_d.set_ydata(intensity)
             elif(self.contReceiveIMU):
                 sendRobotCommand(self.port, self.robot.command)
                 # newvalues = readUInt16Serial(self.port) 

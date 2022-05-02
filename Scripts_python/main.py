@@ -46,7 +46,7 @@ def plotDCCallback(val):
         fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
         fig_plotDCaptor.canvas.mpl_connect('key_release_event', release)
         fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotDCaptor.set_xlim([0, 50])
+        ax_plotDCaptor.set_xlim([0, 2000])
         ax_plotDCaptor.set_ylim([0, 4000])
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         plt.title("E-Puck2 distance captor caracteristic")
@@ -147,6 +147,7 @@ def update_plot():
     if LiveIMU_on:
         fig_plotLiveIMU.canvas.draw()
         fig_plotLiveIMU.canvas.flush_events()
+    pass
     
 
 #reset the sinus plot
