@@ -137,7 +137,8 @@ class serial_thread(Thread):
         while(self.alive):
             if(self.contSendAndReceive):
                 sendRobotCommand(self.port, self.robot.command)
-                newvalues = readfromrobot(self.port) 
+                newvalues = readfromrobot(self.port)
+                self.robot.add_captor_caption(newvalues)
             elif(self.contReceiveCaptorD):
                 sendRobotCommand(self.port, self.robot.command)
                 newvalues = readfromrobot(self.port) 
@@ -149,7 +150,7 @@ class serial_thread(Thread):
                     self.line_capt_d.set_ydata(intensity)
             elif(self.contReceiveIMU):
                 sendRobotCommand(self.port, self.robot.command)
-                newvalue = readUInt16Serial(self.port)
+                newvalue = readfromrobot(self.port)
                 if not newvalue == []: 
                     #newvalue = np.random.randint(0,30*100)/100
                     self.liveIMU.addValue(newvalue[0])

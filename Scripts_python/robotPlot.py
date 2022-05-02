@@ -41,7 +41,7 @@ class Capteur_dist:
 
 class Robot:
 
-    def __init__(self, fig, ax, position = Vector(r=1,theta=-90), direction = 40,capteur_angles = [0,45,-45,90,-90]):
+    def __init__(self, fig, ax, position = Vector(r=1,theta=-90), direction = 40,capteur_angles = [-20,20,-45,45,-90,90]):
         self.fig = fig
         self.ax = ax
         self.command = None
@@ -130,6 +130,10 @@ class Robot:
             self.update_capteurs()
             self.update_robot_plot()
             self.fig.canvas.draw()
+
+    def add_captor_caption(self,captions):
+        for captor, caption in zip(self.capteurs,captions):
+            captor.add_caption(caption)
     
     def remove_captor_captions(self):
         for captor in self.capteurs:

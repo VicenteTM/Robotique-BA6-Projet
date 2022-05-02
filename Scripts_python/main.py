@@ -210,10 +210,18 @@ def plotMovobot(fig_r, ax_r):
 
 def main():
     # #test if the serial port as been given as argument in the terminal
-    if len(sys.argv) == 1:
-        print('Please give the serial port to use as argument')
-        sys.exit(0)
-    
+    if not len(sys.argv) == 1:
+        port = sys.argv[1]
+    else:
+        try:
+            with open('WRITE_PORT_HERE.txt') as doc:
+                port = doc.read()
+        except FileNotFoundError:
+            port=''
+        if port == '':
+            print('Please give the serial port to use as argument')
+            sys.exit(0)
+
     global DCaptor_on
     DCaptor_on = False
     global LiveIMU_on
@@ -228,7 +236,7 @@ def main():
     # #serial reader thread config
     # #begins the serial thread
     global reader_thd
-    reader_thd = serial_thread(sys.argv[1], robot)
+    reader_thd = serial_thread(port , robot)
     reader_thd.start()
 
     plotMovobot(fig_r, ax_r)
