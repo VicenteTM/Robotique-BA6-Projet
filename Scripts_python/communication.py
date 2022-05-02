@@ -129,7 +129,6 @@ class serial_thread(Thread):
         
         try:
             self.port = serial.Serial(port, timeout=0.5)
-            self.port.set_buffer_size(rx_size = 65536, tx_size = 65536)
         except:
             print('Cannot connect to the e-puck2')
             sys.exit(0)
@@ -150,12 +149,13 @@ class serial_thread(Thread):
                     self.line_capt_d.set_ydata(intensity)
             elif(self.contReceiveIMU):
                 sendRobotCommand(self.port, self.robot.command)
-                # newvalues = readUInt16Serial(self.port) 
-                newvalue = np.random.randint(0,30*100)/100
-                self.liveIMU.addValue(newvalue)
-                time_l, intensity = self.liveIMU.get_values()
-                self.line_live_IMU.set_xdata(time_l)
-                self.line_live_IMU.set_ydata(intensity)
+                newvalue = readUInt16Serial(self.port)
+                if not newvalue == []: 
+                    #newvalue = np.random.randint(0,30*100)/100
+                    self.liveIMU.addValue(newvalue[0])
+                    time_l, intensity = self.liveIMU.get_values()
+                    self.line_live_IMU.set_xdata(time_l)
+                    self.line_live_IMU.set_ydata(intensity)
             else:
                 #flush the serial
                 self.port.read(self.port.inWaiting())
