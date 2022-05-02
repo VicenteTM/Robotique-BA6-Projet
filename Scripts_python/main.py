@@ -60,17 +60,17 @@ def plotDCCallback(val):
         fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
         ax_plotDCaptor.set_xlim([0, 2000])
         ax_plotDCaptor.set_ylim([0, 4000])
-
-        
-        colorAx             = 'lightgoldenrodyellow'
-        saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_r)
-        saveCalibrationButton    = Button(saveCalibrationAx, 'Save calibration', color=colorAx, hovercolor='0.975')
-        saveCalibrationButton.on_clicked(sendAndReceiveCallback)
-
-        line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         plt.title("E-Puck2 distance captor caracteristic")
         plt.xlabel("Distance (in mm)")
         plt.ylabel("Intensity")
+
+        
+        colorAx             = 'lightgoldenrodyellow'
+        saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
+        saveCalibrationButton    = Button(saveCalibrationAx, 'Save calibration', color=colorAx, hovercolor='0.975')
+        saveCalibrationButton.on_clicked(saveCalibrationCallback)
+
+        line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         reader_thd.setContReceiveCaptorD(line_capt_d)
         plt.show()
         DCaptor_on = True
@@ -161,8 +161,9 @@ def update_plot():
         fig_r.canvas.draw_idle()
         reader_thd.plot_updated()
     if DCaptor_on:
-        fig_plotDCaptor.canvas.draw()
-        fig_plotDCaptor.canvas.flush_events()
+        fig_plotDCaptor.canvas.draw_idle()
+        #fig_plotDCaptor.canvas.draw()
+        #fig_plotDCaptor.canvas.flush_events()
     if LiveIMU_on:
         fig_plotLiveIMU.canvas.draw()
         fig_plotLiveIMU.canvas.flush_events()
