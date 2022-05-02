@@ -9,6 +9,18 @@ from communication import serial_thread
 import communication
 from plotUtilities import goodbye
 
+def saveCalibrationCallback(val):
+    with open('calibration.txt', 'w') as doc:
+        doc.write('Distance: [')
+        for dist in reader_thd.captorD.dist:
+            doc.write(f'{dist}, ')
+        doc.write('] \n')
+
+        doc.write('Intensity: [')
+        for inten in reader_thd.captorD.intensity:
+            doc.write(f'{inten}, ')
+        doc.write('] \n')
+
 def sendAndReceiveCallback(val):
     
     global DCaptor_on
@@ -48,6 +60,13 @@ def plotDCCallback(val):
         fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
         ax_plotDCaptor.set_xlim([0, 2000])
         ax_plotDCaptor.set_ylim([0, 4000])
+
+        
+        colorAx             = 'lightgoldenrodyellow'
+        saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_r)
+        saveCalibrationButton    = Button(saveCalibrationAx, 'Save calibration', color=colorAx, hovercolor='0.975')
+        saveCalibrationButton.on_clicked(sendAndReceiveCallback)
+
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         plt.title("E-Puck2 distance captor caracteristic")
         plt.xlabel("Distance (in mm)")
