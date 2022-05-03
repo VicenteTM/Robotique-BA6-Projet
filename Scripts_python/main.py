@@ -1,6 +1,8 @@
 import sys
 import matplotlib
 from platform import release
+
+import communication
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
@@ -8,15 +10,16 @@ from robotPlot import Robot, robot_diameter
 from communication import serial_thread
 import communication
 from plotUtilities import goodbye
+import os
 
 def saveCalibrationCallback(val):
-    global DCaptor_on
-    if DCaptor_on is True:
-        with open('calibration.txt', 'w') as doc:
+    if reader_thd.commun_state == communication.DCCALIBRATION:
+        script_foleder = os.path.dirname(os.path.realpath(__file__))
+        with open(script_foleder + '/calibration.txt', 'w') as doc:
             doc.write('Distance: [')
             for dist in reader_thd.captorD.dist:
                 doc.write(f'{dist}, ')
-            doc.write('] \n')
+            doc.write('] \n\n')
 
             doc.write('Intensity: [')
             for inten in reader_thd.captorD.intensity:
@@ -24,37 +27,25 @@ def saveCalibrationCallback(val):
             doc.write('] \n')
 
 def sendAndReceiveCallback(val):
-    
-    global DCaptor_on
-    global LiveIMU_on
-    if DCaptor_on:
+    if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
-        DCaptor_on = False
-    elif LiveIMU_on:
+    elif reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
-        LiveIMU_on = False
 
     reader_thd.setContSendAndReceive()
 
 def stop_readingCallback(val):
-    global DCaptor_on
-    global LiveIMU_on
-    if DCaptor_on:
+    if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
-        DCaptor_on = False
-    elif LiveIMU_on:
+    elif reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
-        LiveIMU_on = False
     reader_thd.stop_reading()
 
 def plotDCCallback(val):
-    global LiveIMU_on
-    if LiveIMU_on:
+    if reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
-        LiveIMU_on = False
 
-    global DCaptor_on
-    if DCaptor_on is False:
+    if reader_thd.commun_state != communication.DCCALIBRATION:
         global fig_plotDCaptor
         fig_plotDCaptor, ax_plotDCaptor = plt.subplots()
         fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
@@ -67,28 +58,25 @@ def plotDCCallback(val):
         plt.ylabel("Intensity")
 
         
-        # colorAx             = 'lightgoldenrodyellow'
-        # saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
-        # saveCalibrationButton    = Button(saveCalibrationAx, 'Save', color=colorAx, hovercolor='0.975')
-        # saveCalibrationButton.on_clicked(saveCalibrationCallback)
+        colorAx             = 'lightgoldenrodyellow'
+        saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
+        saveCalibrationButton    = Button(saveCalibrationAx, 'Save', color=colorAx, hovercolor='0.975')
+        saveCalibrationButton.on_clicked(saveCalibrationCallback)
 
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         reader_thd.setContReceiveCaptorD(line_capt_d)
         plt.show()
-        DCaptor_on = True
+        fig_plotDCaptor._my_btn = saveCalibrationButton
     else:
         plt.close(fig=fig_plotDCaptor)
-        DCaptor_on = False
+        reader_thd.stop_reading()
 
         
 def plotLiveIMUCallback(val):
-    global DCaptor_on
-    if DCaptor_on:
+    if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
-        DCaptor_on = False
 
-    global LiveIMU_on
-    if LiveIMU_on is False:
+    if reader_thd.commun_state != communication.LIVEIMU:
         global fig_plotLiveIMU
         fig_plotLiveIMU, ax_plotLiveIMU = plt.subplots()
         fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
@@ -102,24 +90,19 @@ def plotLiveIMUCallback(val):
         plt.ylabel("Intensity")
         reader_thd.setContLiveIMU(line_live_IMU)
         plt.show()
-        LiveIMU_on = True
     else:
         plt.close(fig=fig_plotLiveIMU)
-        LiveIMU_on = False
+        reader_thd.setContSendAndReceive()
 
 
 def on_press(event):
     if event.key == 'up':
-        robot.move(d_r = 20)
         robot.command = communication.FORWARD
     elif event.key == 'down':
-        robot.move(d_r = -20)
         robot.command = communication.BACKWARD
     elif event.key == 'left':
-        robot.move(d_theta = 10)
         robot.command = communication.LEFT
     elif event.key == 'right':
-        robot.move(d_theta = -10)
         robot.command = communication.RIGHT
     elif event.key == ' ':
         robot.command = communication.NEUTRAL
@@ -139,22 +122,22 @@ def release(event):
 #handler when closing the window
 def handle_close(evt):
     # we stop the serial thread
+    if reader_thd.commun_state == communication.DCCALIBRATION:
+        plt.close(fig=fig_plotDCaptor)
+    if reader_thd.commun_state == communication.LIVEIMU:
+        plt.close(fig=fig_plotLiveIMU)
     reader_thd.stop()
     print(goodbye)
 
 def handle_close_plotDC(evt):
-    plt.close(fig=fig_plotDCaptor)
-    global DCaptor_on
-    if DCaptor_on:
+    if reader_thd.commun_state == communication.DCCALIBRATION:
+        plt.close(fig=fig_plotDCaptor)
         reader_thd.stop_reading()
-        DCaptor_on = False
 
 def handle_close_plotLIMU(evt):
-    plt.close(fig=fig_plotLiveIMU)
-    global LiveIMU_on
-    if LiveIMU_on:
-        reader_thd.stop_reading()
-        LiveIMU_on = False
+    if reader_thd.commun_state == communication.LIVEIMU:
+        plt.close(fig=fig_plotLiveIMU)
+        reader_thd.setContSendAndReceive()
 
 
 #update the plots
@@ -162,14 +145,11 @@ def update_plot():
     if(reader_thd.need_to_update_plot()):
         fig_r.canvas.draw_idle()
         reader_thd.plot_updated()
-    if DCaptor_on:
-        # fig_plotDCaptor.canvas.draw_idle()
-        fig_plotDCaptor.canvas.draw()
-        fig_plotDCaptor.canvas.flush_events()
-    if LiveIMU_on:
-        fig_plotLiveIMU.canvas.draw()
-        fig_plotLiveIMU.canvas.flush_events()
-    pass
+        if reader_thd.commun_state == communication.DCCALIBRATION:
+            fig_plotDCaptor.canvas.draw_idle() 
+        if reader_thd.commun_state == communication.LIVEIMU:
+            fig_plotLiveIMU.canvas.draw_idle() 
+        reader_thd.plot_updated()
     
 
 #reset the sinus plot
@@ -221,10 +201,6 @@ def plotMovobot(fig_r, ax_r):
     captorLIMUButton.on_clicked(plotLiveIMUCallback)
     stop.on_clicked(stop_readingCallback)
 
-    saveAx              = plt.axes([0.65, 0.02, 0.1, 0.04],figure=fig_r)
-    save                    = Button(saveAx, 'Save', color=colorAx, hovercolor='0.975')
-    save.on_clicked(saveCalibrationCallback)
-
     
     sizefromrobot = 10 * robot_diameter
 
@@ -248,10 +224,6 @@ def main():
             print('Please give the serial port to use as argument')
             sys.exit(0)
 
-    global DCaptor_on
-    DCaptor_on = False
-    global LiveIMU_on
-    LiveIMU_on = False
     global fig_r
     fig_r, ax_r = plt.subplots(figsize=(19,9))
 

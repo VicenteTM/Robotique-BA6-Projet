@@ -130,6 +130,14 @@ class Robot:
             self.update_capteurs()
             self.update_robot_plot()
             self.fig.canvas.draw()
+    
+    def update_robot_from_reception(self, data):
+        self.position.setxy(data[0],data[1])
+        self.robot.add_captor_caption(data[2:len(self.capteurs)+2])
+        self.update_capteurs()
+        self.update_robot_plot()
+        self.fig.canvas.draw()
+
 
     def add_captor_caption(self,captions):
         for captor, caption in zip(self.capteurs,captions):

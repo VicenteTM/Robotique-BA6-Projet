@@ -8,15 +8,19 @@ import serial
 from captorsPlot import CaptorDist, LiveIMU
 from robotPlot import Robot
 
-NEUTRAL = 5
-FORWARD = 0
-BACKWARD = 1
-LEFT = 2
-RIGHT = 3
-DCCALIBRATION = 6
+NEUTRAL = 0
+FORWARD = 1
+BACKWARD = 2
+LEFT = 3
+RIGHT = 4
 
-def sendRobotCommand(port,data_to_send):
-    data = np.array([data_to_send]).astype(np.int16)
+IDLE = 0
+CONTROLANDREAD = 1
+DCCALIBRATION = 2
+LIVEIMU = 3
+
+def sendRobotCom(port,data_to_send):
+    data = np.array(data_to_send).astype(np.int16)
 
     #to convert to int16 we need to pass via numpy
     size = np.array([data.size], dtype=np.int16)
@@ -35,6 +39,7 @@ def sendRobotCommand(port,data_to_send):
 
 # #reads the FFT in float32 from the serial
 def readUInt16Serial(port):
+
 
     state = 0
 
@@ -119,11 +124,9 @@ class serial_thread(Thread):
     def __init__(self, port, robot):
         Thread.__init__(self)
         self.robot = robot
-        self.contReceiveCaptorD = False
-        self.contReceiveIMU = False
-        self.contSendAndReceive = False
         self.alive = True
         self.need_to_update = False
+        self.commun_state = IDLE
 
         print('Connecting to port {}'.format(port))
         
@@ -132,65 +135,79 @@ class serial_thread(Thread):
         except:
             print('Cannot connect to the e-puck2')
             sys.exit(0)
+
     #function called after the init
     def run(self):
         while(self.alive):
-            if(self.contSendAndReceive):
-                sendRobotCommand(self.port, self.robot.command)
-                newvalues = readfromrobot(self.port)
-                self.robot.add_captor_caption(newvalues)
-            elif(self.contReceiveCaptorD):
-                sendRobotCommand(self.port, self.robot.command)
-                newvalues = readfromrobot(self.port) 
-                # newvalues = [np.random.randint(0,2000),np.random.randint(0,4000)]
-                if not newvalues == []:
-                    self.captorD.addValues(newvalues)
-                    dist, intensity = self.captorD.get_values()
-                    self.line_capt_d.set_xdata(dist)
-                    self.line_capt_d.set_ydata(intensity)
-            elif(self.contReceiveIMU):
-                sendRobotCommand(self.port, self.robot.command)
-                newvalue = readfromrobot(self.port)
-                if not newvalue == []: 
-                    #newvalue = np.random.randint(0,30*100)/100
-                    self.liveIMU.addValue(newvalue[0])
-                    time_l, intensity = self.liveIMU.get_values()
-                    self.line_live_IMU.set_xdata(time_l)
-                    self.line_live_IMU.set_ydata(intensity)
+            if self.commun_state in [CONTROLANDREAD, DCCALIBRATION, LIVEIMU]:
+                self.buffer_clean_opti()
+                sendRobotCom(self.port, [self.commun_state,self.robot.command])
+                received_data = readfromrobot(self.port)
+                length_data = len(received_data)
+                if received_data and self.check_length(length_data):
+                    if self.commun_state == CONTROLANDREAD:
+                        self.robot.update_robot_from_reception(received_data)
+
+                    elif self.commun_state == DCCALIBRATION:
+                        self.captorD.addValues(received_data)
+                        dist, intensity = self.captorD.get_values()
+
+                        self.line_capt_d.set_xdata(dist)
+                        self.line_capt_d.set_ydata(intensity)
+
+                    elif self.commun_state == LIVEIMU:
+                        self.robot.update_robot_from_reception(received_data[0:len(received_data)-2])
+                        self.liveIMU.addValue(received_data[len(received_data)-1])
+
+                        time_l, intensity = self.liveIMU.get_values()
+                        self.line_live_IMU.set_xdata(time_l)
+                        self.line_live_IMU.set_ydata(intensity)
+                else:
+                    print("Not good data")
             else:
                 #flush the serial
                 self.port.read(self.port.inWaiting())
                 time.sleep(0.1)
-
-    #enables the continuous reading
-    #and disables the continuous sending and receiving
-    def setContReceiveCaptorD(self, line_capt_d):  
-        self.contSendAndReceive = False
-        self.contReceiveCaptorD = True
-        self.contReceiveIMU = False
-        self.line_capt_d = line_capt_d
-        self.captorD = CaptorDist()
+            print(self.commun_state)
 
     #disables the continuous reading
     #and enables the continuous sending and receiving
     def setContSendAndReceive(self):
-        self.contSendAndReceive = True
-        self.contReceiveCaptorD = False
-        self.contReceiveIMU = False
+        self.commun_state = CONTROLANDREAD
+        
+
+    #enables the continuous reading
+    #and disables the continuous sending and receiving
+    def setContReceiveCaptorD(self, line_capt_d):
+        self.commun_state = DCCALIBRATION
+
+        self.line_capt_d = line_capt_d
+        self.captorD = CaptorDist()
         
     def setContLiveIMU(self, line_live_IMU):
-        self.contSendAndReceive = False
-        self.contReceiveCaptorD = False
-        self.contReceiveIMU = True
+        self.commun_state = LIVEIMU
+
         self.line_live_IMU = line_live_IMU
         self.liveIMU = LiveIMU()
 
     #disables the continuous reading
     #and disables the continuous sending and receiving
     def stop_reading(self):
-        self.contSendAndReceive = False
-        self.contReceiveCaptorD = False
-        self.contReceiveIMU = False
+        self.commun_state = IDLE
+
+    def check_length(self,length):
+        if self.commun_state == CONTROLANDREAD:
+             return length == 2 + len(self.robot.capteurs)
+
+        elif self.commun_state == DCCALIBRATION:
+            return length == 2
+
+        elif self.commun_state == LIVEIMU:
+             return length == 2 + len(self.robot.capteurs) + 1
+
+        else:
+            return False
+
 
     #tell the plot need to be updated
     def tell_to_update_plot(self):
@@ -213,3 +230,7 @@ class serial_thread(Thread):
                 self.port.read(self.port.inWaiting())
                 time.sleep(0.01)
             self.port.close()
+
+    def buffer_clean_opti(self):
+        if self.port.inWaiting() > 2000:
+            self.port.read(self.port.inWaiting())
