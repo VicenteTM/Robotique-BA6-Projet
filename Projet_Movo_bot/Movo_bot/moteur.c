@@ -72,9 +72,17 @@ static THD_FUNCTION(Moteur, arg) {
                     case CONTROLANDREAD:
                         stop=0;
                         calibration_done=0;
+                        palWritePad(GPIOD, GPIOD_LED1,0);
+                        palWritePad(GPIOD, GPIOD_LED3,1);
+                        palWritePad(GPIOD, GPIOD_LED7,1);
+                        palWritePad(GPIOD, GPIOD_LED5,1);
                         break;
                     case CALIBRATION:
                     	if (!calibration_done){
+                    		palWritePad(GPIOD, GPIOD_LED1,1);
+                    		palWritePad(GPIOD, GPIOD_LED3,0);
+                    		palWritePad(GPIOD, GPIOD_LED7,0);
+                    		palWritePad(GPIOD, GPIOD_LED5,1);
                         pos_r_av=right_motor_get_pos();
                         while (right_motor_get_pos()>(pos_r_av-385))
         		        	{
@@ -97,6 +105,10 @@ static THD_FUNCTION(Moteur, arg) {
                     	}
                         break;
                     case LIVEIMU:
+                		palTogglePad(GPIOD, GPIOD_LED1);
+                		palTogglePad(GPIOD, GPIOD_LED3);
+                		palTogglePad(GPIOD, GPIOD_LED7);
+                		palTogglePad(GPIOD, GPIOD_LED5);
                         chBSemSignal(&impact_sem);
                         calibration_done=0;
                         imu=1;
@@ -160,7 +172,7 @@ static THD_FUNCTION(Moteur, arg) {
         	    right_motor_set_speed(0);
         	    chprintf((BaseSequentialStream *)&SD3," stop \r\n");
         	    distance=0;
-        	    send=0;
+        	    send=1;
                 break;
         	
        // }
@@ -199,7 +211,7 @@ static THD_FUNCTION(Moteur, arg) {
                 data[7] = get_capteur_values_to_send()[4];
                 data[8] = get_capteur_values_to_send()[5];
                 if (imu){
-                	data[9]= 23;
+                	data[9]= get_impact();
                 	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 10);
                 	imu=0;
                 	}

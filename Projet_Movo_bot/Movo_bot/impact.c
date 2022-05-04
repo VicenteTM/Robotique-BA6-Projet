@@ -41,6 +41,7 @@ static THD_FUNCTION(Impact, arg) {
     (void)arg;
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
     imu_msg_t imu_values;
+    impact=0;
      while(1){
     	 wait_impact();
     	 messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
@@ -53,7 +54,7 @@ void get_gravity(imu_msg_t *imu_values){
 
     //we create variables for the led in order to turn them off at each loop and to 
     //select which one to turn on
-    uint8_t led1 = 0, led3 = 0, led5 = 0, led7 = 0;
+    uint8_t led1 = 1, led3 = 1, led5 = 1, led7 = 0;
     //threshold value to not use the leds when the robot is too horizontal
     float threshold = 3;
     impact = 0;
@@ -62,30 +63,26 @@ void get_gravity(imu_msg_t *imu_values){
     //variable to measure the time some functions take
     //volatile to not be optimized out by the compiler if not used
     volatile uint16_t time = 0;
-    uint16_t data_buffer[1];
-    data_buffer[0] = accel[Y_AXIS];
+    impact = accel[Y_AXIS];
     //SendUint16ToComputer((BaseSequentialStream *) &SD3, data_buffer, 1);
+    /*
      chSysLock();
      GPTD11.tim->CNT = 0;
 
      //we find which led of each axis should be turned on
      if(accel[X_AXIS] > threshold){
     	 led7 = 1;
-    	 impact = 1;
      }
      else if(accel[X_AXIS] < -threshold){
     	 led3 = 1;
-    	 impact = 1;
      }
 
      if(accel[Y_AXIS] > threshold){
     	 led5 = 1;
-    	 impact = 1;
      }
 
      else if(accel[Y_AXIS] < -threshold){
     	 led1 = 1;
-         impact = 1;
      }
     	 //chThdSetPriority(NORMALPRIO+1);
 
@@ -121,7 +118,7 @@ void get_gravity(imu_msg_t *imu_values){
     palWritePad(GPIOD, GPIOD_LED3, led3 ? 0 : 1);
     palWritePad(GPIOD, GPIOD_LED5, led5 ? 0 : 1);
     palWritePad(GPIOD, GPIOD_LED7, led7 ? 0 : 1);
-
+    */
 }
 
 int get_impact(void){
