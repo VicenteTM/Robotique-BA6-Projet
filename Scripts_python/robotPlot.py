@@ -177,11 +177,17 @@ def convert_intensity_to_mm(intensity, calibrated):
         distance = goodcalibration.Distance[index]
         return distance
     else:
-        import calibration
-        intensity = closest_value(calibration.Intensity, intensity)
-        index = calibration.Intensity.index(intensity)
-        distance = calibration.Distance[index]
+        try:
+            import calibration
+            intensity = closest_value(calibration.Intensity, intensity)
+            index = calibration.Intensity.index(intensity)
+            distance = calibration.Distance[index]
+        except FileNotFoundError:
+            intensity = closest_value(goodcalibration.Intensity, intensity)
+            index = goodcalibration.Intensity.index(intensity)
+            distance = goodcalibration.Distance[index]
         return distance
+
 
 
 def convert_steps_to_mm(number_step):
