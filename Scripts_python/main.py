@@ -18,7 +18,7 @@ def saveCalibrationCallback(val):
         with open(script_foleder + '/calibration.py', 'w') as doc:
             doc.write('Distance = [')
             for dist in reader_thd.captorD.dist:
-                doc.write(f'{dist}, ')
+                doc.write(f'{"%.3f" % dist}, ')
             doc.write('] \n\n')
 
             doc.write('Intensity = [')
@@ -52,7 +52,7 @@ def plotDCCallback(val):
         fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
         fig_plotDCaptor.canvas.mpl_connect('key_release_event', release)
         fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotDCaptor.set_xlim([0, 2000])
+        ax_plotDCaptor.set_xlim([0, 50])
         ax_plotDCaptor.set_ylim([0, 4000])
         plt.title("E-Puck2 distance captor caracteristic")
         plt.xlabel("Distance (in mm)")

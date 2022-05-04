@@ -6,9 +6,10 @@ import goodcalibration
 #Robot constants (in mm)
 DISTANCE_CAPTOR_MAX_RANGE = 20
 WHEEL_DIST = 53 
-WHEEL_DIAMETER = 13 
-ROBOT_DIAMETER = 70 
+WHEEL_DIAMETER = 41
 WHEEL_RADIUS = WHEEL_DIAMETER/2 
+WHEEL_PERIMETER = WHEEL_DIAMETER * math.pi
+ROBOT_DIAMETER = 70 
 ROBOT_RADIUS = ROBOT_DIAMETER/2 
 STEPS_PER_TURN = 1000
 
@@ -173,20 +174,18 @@ def convert_intensity_to_mm(intensity, calibrated):
     if not calibrated:
         intensity = closest_value(goodcalibration.Intensity, intensity)
         index = goodcalibration.Intensity.index(intensity)
-        number_step = goodcalibration.Distance[index]
-        distance = convert_steps_to_mm(number_step)
+        distance = goodcalibration.Distance[index]
         return distance
     else:
         import calibration
         intensity = closest_value(calibration.Intensity, intensity)
         index = calibration.Intensity.index(intensity)
-        number_step = calibration.Distance[index]
-        distance = convert_steps_to_mm(number_step)
+        distance = calibration.Distance[index]
         return distance
 
 
 def convert_steps_to_mm(number_step):
-    distance = (number_step * WHEEL_DIAMETER * math.pi * 10) / STEPS_PER_TURN
+    distance = (number_step * WHEEL_PERIMETER * 2) / (STEPS_PER_TURN * 10)
     return distance
     
 
