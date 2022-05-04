@@ -6,7 +6,7 @@
 #include <main.h>
 
 //static global
-static uint16_t command[1];
+static uint16_t data_received[2];
 
 //semaphore
 static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);
@@ -86,6 +86,9 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 		c1 = chSequentialStreamGet(in);
 		c2 = chSequentialStreamGet(in);
 		data[0] = (int16_t)(c1);
+		c1 = chSequentialStreamGet(in);
+		c2 = chSequentialStreamGet(in);
+		data[1] = (int16_t)(c1);
 	}
 
 	return temp_size/2;
@@ -110,12 +113,12 @@ static THD_FUNCTION(SendReceiveCommand, arg) {
     
 
 	while(1){
-    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, command, 1);
+    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_received, 2);
         //chprintf((BaseSequentialStream *)&SDU1,"Size: %d \r\n",size);
-    	if(size == 1)
+    	if(size == 2)
     	{
-			//SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
-    	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
+			//SendUint8ToComputer((BaseSequentialStream *) &SD3, data_received, 1);
+    	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", data_received[0]);
 		chBSemSignal(&sendToEpuck_sem);
     	}
     }
@@ -125,8 +128,12 @@ void wait_send_to_epuck(void){
 	chBSemWait(&sendToEpuck_sem);
 }
 
+uint16_t get_state(void){
+	return data_received[0];
+}
+
 uint16_t get_command(void){
-	return command[0];
+	return data_received[1];
 }
 
 void start_command_send_receive(void)

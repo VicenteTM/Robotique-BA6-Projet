@@ -44,18 +44,18 @@ static THD_FUNCTION(Impact, arg) {
      while(1){
     	 wait_impact();
     	 messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    	 show_gravity(&imu_values);
+    	 get_gravity(&imu_values);
     	 //chThdSleepMilliseconds(500);
     }
 }
 
-void show_gravity(imu_msg_t *imu_values){
+void get_gravity(imu_msg_t *imu_values){
 
     //we create variables for the led in order to turn them off at each loop and to 
     //select which one to turn on
     uint8_t led1 = 0, led3 = 0, led5 = 0, led7 = 0;
     //threshold value to not use the leds when the robot is too horizontal
-    float threshold = 0.8;
+    float threshold = 3;
     impact = 0;
     //create a pointer to the array for shorter name
     float *accel = imu_values->acceleration;
@@ -64,7 +64,7 @@ void show_gravity(imu_msg_t *imu_values){
     volatile uint16_t time = 0;
     uint16_t data_buffer[1];
     data_buffer[0] = accel[Y_AXIS];
-    SendUint16ToComputer((BaseSequentialStream *) &SD3, data_buffer, 1);
+    //SendUint16ToComputer((BaseSequentialStream *) &SD3, data_buffer, 1);
      chSysLock();
      GPTD11.tim->CNT = 0;
 
