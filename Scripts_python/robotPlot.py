@@ -26,9 +26,9 @@ class Capteur_dist:
         self.direction.r = distance_captor_max_range
         self.arrow.set_data(x=self.position.x, y=self.position.y, dx=self.direction.x, dy=self.direction.y)
     
-    def add_caption(self,dist):
+    def add_caption(self,intensity):
         cap_r = self.direction
-        cap_r.r = dist
+        cap_r.r = intensity
         cap = self.position + cap_r
         plotcap = self.ax.plot(cap.x, cap.y, "ro", ms = 1)
         self.captions.append(plotcap)
@@ -71,7 +71,7 @@ class Robot:
         self.ax.add_line(self.left_wheel)
 
         
-        self.coord = ax.text(5 * robot_diameter * 1.5, 0, f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}', style='italic',
+        self.coord = ax.text(5 * robot_diameter * 1.5 + self.position.x, self.position.y, f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}', style='italic',
             bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
 
     def compute_capteur_position(self,capteur_angle):
@@ -118,6 +118,7 @@ class Robot:
         self.right_wheel.set(xdata = x_right_data, ydata = y_right_data)
         self.left_wheel.set(xdata = x_left_data, ydata = y_left_data)
 
+        self.coord.set_position((5 * robot_diameter * 1.5 + self.position.x, self.position.y))
         self.coord.set_text(f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}')
         
         sizefromrobot = 5 * robot_diameter
@@ -164,3 +165,7 @@ class Robot:
 
 
 #distance = distance wheelperi * 10 /NSTEP (1000)
+
+
+# def convert_intensity_to_mm(intensity):
+#     try:

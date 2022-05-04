@@ -20,15 +20,14 @@ class CaptorDist():
 
 class LiveIMU():
     def __init__(self) -> None:
-        self.time_l = list(range(0, 5000))
-        self.time_l = [x / 10 for x in self.time_l]
+        self.time_l = list(range(0, 11))
         self.intensity = []
 
     def addValue(self,newvalue):
-        if len(self.intensity) < 500:
+        if len(self.intensity) < 11:
             self.intensity.append(newvalue)
         else:
-            self.intensity =self.intensity[1:500]
+            self.intensity = self.intensity[1:11]
             self.intensity.append(newvalue)
     
     def get_values(self):

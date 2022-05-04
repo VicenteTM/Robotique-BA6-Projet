@@ -158,10 +158,8 @@ class serial_thread(Thread):
                         print("hey")
 
                     elif self.commun_state == LIVEIMU:
-                        newvalue = np.random.randint(0,30*100)/100
                         self.robot.update_robot_from_reception(received_data[0:len(received_data)-2])
-                        # self.liveIMU.addValue(received_data[len(received_data)-1])
-                        self.liveIMU.addValue(newvalue)
+                        self.liveIMU.addValue(received_data[len(received_data)-1])
 
                         time_l, intensity = self.liveIMU.get_values()
                         self.line_live_IMU.set_xdata(time_l)

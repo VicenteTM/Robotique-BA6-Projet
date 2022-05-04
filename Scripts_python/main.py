@@ -82,8 +82,8 @@ def plotLiveIMUCallback(val):
         fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
         fig_plotLiveIMU.canvas.mpl_connect('key_release_event', release)
         fig_plotLiveIMU.canvas.mpl_connect('close_event', handle_close_plotLIMU) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotLiveIMU.set_xlim([0, 50])
-        ax_plotLiveIMU.set_ylim([0, 30])
+        ax_plotLiveIMU.set_xlim([0, 10])
+        ax_plotLiveIMU.set_ylim([-20, 20])
         line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
         plt.title("Live IMU")
         plt.xlabel("Live Time")
