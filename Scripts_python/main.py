@@ -6,7 +6,7 @@ import communication
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
-from robotPlot import Robot, robot_diameter
+from robotPlot import Robot, ROBOT_DIAMETER
 from communication import serial_thread
 import communication
 from plotUtilities import goodbye
@@ -25,6 +25,7 @@ def saveCalibrationCallback(val):
             for inten in reader_thd.captorD.intensity:
                 doc.write(f'{inten}, ')
             doc.write('] \n')
+        robot.calibrated = True
 
 def sendAndReceiveCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
@@ -82,7 +83,7 @@ def plotLiveIMUCallback(val):
         fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
         fig_plotLiveIMU.canvas.mpl_connect('key_release_event', release)
         fig_plotLiveIMU.canvas.mpl_connect('close_event', handle_close_plotLIMU) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotLiveIMU.set_xlim([0, 10])
+        ax_plotLiveIMU.set_xlim([0, 50])
         ax_plotLiveIMU.set_ylim([-20, 20])
         line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
         plt.title("Live IMU")
@@ -201,7 +202,7 @@ def plotMovobot(fig_r, ax_r):
     stop.on_clicked(stop_readingCallback)
 
     
-    sizefromrobot = 5 * robot_diameter
+    sizefromrobot = 5 * ROBOT_DIAMETER
 
     ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
     ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])

@@ -1,3 +1,5 @@
+import robotPlot
+
 class CaptorDist():
     def __init__(self) -> None:
         self.dist = []
@@ -11,7 +13,7 @@ class CaptorDist():
 
     def addValues(self,newvalues:list):
         if newvalues[0] not in self.dist:
-            self.dist.append(newvalues[0])
+            self.dist.append(robotPlot.convert_steps_to_mm(newvalues[0]))
             self.intensity.append(newvalues[1])
             self.sort()
     
@@ -20,15 +22,17 @@ class CaptorDist():
 
 class LiveIMU():
     def __init__(self) -> None:
-        self.time_l = list(range(0, 11))
+        self.time_l = list(range(0, 51))
         self.intensity = []
 
     def addValue(self,newvalue):
-        if len(self.intensity) < 11:
+        if len(self.intensity) < 51:
             self.intensity.append(newvalue)
         else:
-            self.intensity = self.intensity[1:11]
+            self.intensity = self.intensity[1:51]
             self.intensity.append(newvalue)
     
     def get_values(self):
         return self.time_l[0:len(self.intensity)], self.intensity
+
+
