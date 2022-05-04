@@ -15,13 +15,13 @@ import os
 def saveCalibrationCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
         script_foleder = os.path.dirname(os.path.realpath(__file__))
-        with open(script_foleder + '/calibration.txt', 'w') as doc:
-            doc.write('Distance: [')
+        with open(script_foleder + '/calibration.py', 'w') as doc:
+            doc.write('Distance = [')
             for dist in reader_thd.captorD.dist:
                 doc.write(f'{dist}, ')
             doc.write('] \n\n')
 
-            doc.write('Intensity: [')
+            doc.write('Intensity = [')
             for inten in reader_thd.captorD.intensity:
                 doc.write(f'{inten}, ')
             doc.write('] \n')
@@ -145,11 +145,10 @@ def update_plot():
     if(reader_thd.need_to_update_plot()):
         fig_r.canvas.draw_idle()
         reader_thd.plot_updated()
-        if reader_thd.commun_state == communication.DCCALIBRATION:
-            fig_plotDCaptor.canvas.draw_idle() 
-        if reader_thd.commun_state == communication.LIVEIMU:
-            fig_plotLiveIMU.canvas.draw_idle() 
-        reader_thd.plot_updated()
+    if reader_thd.commun_state == communication.DCCALIBRATION:
+        fig_plotDCaptor.canvas.draw() 
+    if reader_thd.commun_state == communication.LIVEIMU:
+        fig_plotLiveIMU.canvas.draw() 
     
 
 #reset the sinus plot
@@ -202,10 +201,10 @@ def plotMovobot(fig_r, ax_r):
     stop.on_clicked(stop_readingCallback)
 
     
-    sizefromrobot = 10 * robot_diameter
+    sizefromrobot = 5 * robot_diameter
 
-    ax_r.set_xlim([-sizefromrobot, sizefromrobot])
-    ax_r.set_ylim([-sizefromrobot, sizefromrobot])
+    ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
+    ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])
 
     plt.show()
 
@@ -225,7 +224,7 @@ def main():
             sys.exit(0)
 
     global fig_r
-    fig_r, ax_r = plt.subplots(figsize=(19,9))
+    fig_r, ax_r = plt.subplots(figsize=(15.36, 7.624))
 
     global robot
     robot = Robot(fig_r, ax_r)

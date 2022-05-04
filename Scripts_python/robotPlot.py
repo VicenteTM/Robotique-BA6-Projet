@@ -10,10 +10,12 @@ wheel_radius = wheel_diameter/2
 robot_radius = robot_diameter/2
 
 class Capteur_dist:
-    def __init__(self,position: Vector, direction: Vector,angle_rel):
+    def __init__(self,position: Vector, direction: Vector,angle_rel, ax):
         self.position = position
         self.direction = direction
         self.angle_rel = angle_rel
+        self.ax = ax
+
         self.direction.r = distance_captor_max_range
         self.arrow = plt.arrow(self.position.x, self.position.y, self.direction.x, self.direction.y, length_includes_head = True, width = 0.01)
         self.captions = []
@@ -28,7 +30,7 @@ class Capteur_dist:
         cap_r = self.direction
         cap_r.r = dist
         cap = self.position + cap_r
-        plotcap = plt.plot(cap.x, cap.y, "ro", ms = 1)
+        plotcap = self.ax.plot(cap.x, cap.y, "ro", ms = 1)
         self.captions.append(plotcap)
     
     def remove_captions(self):
@@ -41,7 +43,7 @@ class Capteur_dist:
 
 class Robot:
 
-    def __init__(self, fig, ax, position = Vector(r=1,theta=-90), direction = 40,capteur_angles = [-20,20,-45,45,-90,90]):
+    def __init__(self, fig, ax, position = Vector(r=1,theta=-90), direction = 0,capteur_angles = [-20,20,-45,45,-90,90]):
         self.fig = fig
         self.ax = ax
         self.command = None
@@ -51,7 +53,7 @@ class Robot:
         self.capteurs = []
         for capteur_angle in capteur_angles:
             position_c_abs,position_c_rel = self.compute_capteur_position(capteur_angle)
-            capteur = Capteur_dist(position_c_abs,position_c_rel,capteur_angle)
+            capteur = Capteur_dist(position_c_abs,position_c_rel,capteur_angle,self.ax)
             self.capteurs.append(capteur)
 
         self.circle = plt.Circle(self.position.xy, robot_radius,fill=True, ec= 'black',fc= 'white')
@@ -69,7 +71,7 @@ class Robot:
         self.ax.add_line(self.left_wheel)
 
         
-        self.coord = ax.text(10 * robot_diameter * 1.5, 0, f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}', style='italic',
+        self.coord = ax.text(5 * robot_diameter * 1.5, 0, f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}', style='italic',
             bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
 
     def compute_capteur_position(self,capteur_angle):
@@ -117,6 +119,11 @@ class Robot:
         self.left_wheel.set(xdata = x_left_data, ydata = y_left_data)
 
         self.coord.set_text(f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}')
+        
+        sizefromrobot = 5 * robot_diameter
+
+        self.ax.set_xlim([-sizefromrobot + self.position.getx(), sizefromrobot + self.position.getx()])
+        self.ax.set_ylim([-sizefromrobot + self.position.gety(), sizefromrobot + self.position.gety()])
 
     def move(self, d_r =None, d_theta=None):
         if d_r is not None:
@@ -133,7 +140,8 @@ class Robot:
     
     def update_robot_from_reception(self, data):
         self.position.setxy(data[0],data[1])
-        self.robot.add_captor_caption(data[2:len(self.capteurs)+2])
+        self.direction.settheta(data[2] * 90)
+        self.add_captor_caption(data[3:len(self.capteurs)+2])
         self.update_capteurs()
         self.update_robot_plot()
         self.fig.canvas.draw()
@@ -153,3 +161,6 @@ class Robot:
         self.remove_captor_captions()
         self.update_capteurs()
         self.update_robot_plot()
+
+
+#distance = distance wheelperi * 10 /NSTEP (1000)

@@ -115,6 +115,8 @@ def readfromrobot(port):
     value = readUInt16Serial(port) 
     if(len(value)>0):
         print(value)
+    else:
+        print("[]")
     return value
 
 # #thread used to control the communication part
@@ -139,12 +141,11 @@ class serial_thread(Thread):
     #function called after the init
     def run(self):
         while(self.alive):
+            sendRobotCom(self.port, [self.commun_state,self.robot.command])
             if self.commun_state in [CONTROLANDREAD, DCCALIBRATION, LIVEIMU]:
                 self.buffer_clean_opti()
-                sendRobotCom(self.port, [self.commun_state,self.robot.command])
                 received_data = readfromrobot(self.port)
-                length_data = len(received_data)
-                if received_data and self.check_length(length_data):
+                if self.check_length(len(received_data)):
                     if self.commun_state == CONTROLANDREAD:
                         self.robot.update_robot_from_reception(received_data)
 
@@ -154,10 +155,13 @@ class serial_thread(Thread):
 
                         self.line_capt_d.set_xdata(dist)
                         self.line_capt_d.set_ydata(intensity)
+                        print("hey")
 
                     elif self.commun_state == LIVEIMU:
+                        newvalue = np.random.randint(0,30*100)/100
                         self.robot.update_robot_from_reception(received_data[0:len(received_data)-2])
-                        self.liveIMU.addValue(received_data[len(received_data)-1])
+                        # self.liveIMU.addValue(received_data[len(received_data)-1])
+                        self.liveIMU.addValue(newvalue)
 
                         time_l, intensity = self.liveIMU.get_values()
                         self.line_live_IMU.set_xdata(time_l)
@@ -197,13 +201,13 @@ class serial_thread(Thread):
 
     def check_length(self,length):
         if self.commun_state == CONTROLANDREAD:
-             return length == 2 + len(self.robot.capteurs)
+             return length == 3 + len(self.robot.capteurs)
 
         elif self.commun_state == DCCALIBRATION:
             return length == 2
 
         elif self.commun_state == LIVEIMU:
-             return length == 2 + len(self.robot.capteurs) + 1
+             return length == 3 + len(self.robot.capteurs) + 1
 
         else:
             return False
