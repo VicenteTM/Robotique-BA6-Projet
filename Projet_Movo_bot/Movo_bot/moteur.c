@@ -174,20 +174,6 @@ static THD_FUNCTION(Moteur, arg) {
         	    distance=0;
         	    send=1;
                 break;
-        	
-       // }
-	/*else {
-		
-		speed_cm_l= left_motor_get_pos() * WHEEL_PERIMETER/ NSTEP_ONE_TURN;
-		speed_cm_r= right_motor_get_pos() * WHEEL_PERIMETER/ NSTEP_ONE_TURN;
-		chprintf((BaseSequentialStream *)&SD3," left \r\n");
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",left_motor_get_pos());
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",pos_cm_l);
-		chprintf((BaseSequentialStream *)&SD3," right \r\n");
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",right_motor_get_pos());
-		chprintf((BaseSequentialStream *)&SD3," %d \r\n",pos_cm_r);
-	}
-*/
         }
             if (send){
                 wait_capteur_received();
@@ -219,6 +205,20 @@ static THD_FUNCTION(Moteur, arg) {
                 	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 9);
                 send=0;
                 }
+            // if (abs(get_impact())>THRESHOLD){
+                //     pos_r_av=right_motor_get_pos();
+                //     while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
+                //     {
+                //     	left_motor_set_speed(-400);
+                //     	right_motor_set_speed(400);
+                //     }
+                //     left_motor_set_speed(0);
+                //     right_motor_set_speed(0);
+                //     distance=0;
+                //     direction=set_direction(BACKWARD,direction);
+                //     stop=1;
+                //     send=1;
+                //             }    
             }
          //}
 	}
