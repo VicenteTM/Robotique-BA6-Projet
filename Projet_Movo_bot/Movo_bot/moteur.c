@@ -2,6 +2,7 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <usbcfg.h>
+#include<math.h>
 #include <sensors\proximity.h>
 #include <main.h>
 #include <motors.h>
@@ -22,6 +23,7 @@ static THD_FUNCTION(Moteur, arg)
     (void)arg;
     uint16_t send = 1;
     uint16_t stop = 0;
+    uint16_t calibration_start=1;
     uint16_t calibration_done = 0;
     uint16_t command;
     uint compteur=0;
@@ -48,8 +50,11 @@ static THD_FUNCTION(Moteur, arg)
                     break;
                 case CALIBRATION:
                     if (!calibration_done){
-                    pos_r_av=right_motor_get_pos();
-                    if (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50mm
+                    	if (calibration_start){
+                    		pos_r_av=right_motor_get_pos();
+                    		calibration_start=0;
+                    	}
+                    while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50mm
                         {
                         left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
                         right_motor_set_speed(-mm_to_step(SPEED)/2);
@@ -59,13 +64,13 @@ static THD_FUNCTION(Moteur, arg)
                         SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
                         compteur++;
                         }
-                    else 
                     left_motor_set_speed(0);
                     right_motor_set_speed(0);
                     distance=0;
                     send=0;
                     compteur=0;
                     stop=1;
+                    calibration_start=1;
                     calibration_done=1;
                     }
                     break;
@@ -85,7 +90,7 @@ static THD_FUNCTION(Moteur, arg)
             {
                 case FORWARD:
                     pos_r_av=right_motor_get_pos();
-                    while (right_motor_get_pos()<(pos_r_av+(mm_to_step(DISTANCE_ONE)/2)))
+                    while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))
                     {
                         left_motor_set_speed(mm_to_step(2*SPEED));
                         right_motor_set_speed(mm_to_step(2*SPEED));
@@ -258,14 +263,17 @@ void wait_impact(void)
 	chBSemWait(&impact_sem);
 }
 
-uint16_t mm_to_step(uint16_t value_mm){
-    uint16_t value_step;
-    value_step = value_mm * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+int16_t mm_to_step(int16_t value_mm){
+	double value;
+    int16_t value_step;
+    value =(double) value_mm * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+    value_step=floor(value + 0.5);
     return value_step;
 }
-
-uint16_t step_to_mm(uint16_t value_step){
-    uint16_t value_mm;
-    value_mm = (float) (value_step * WHEEL_PERIMETER) / NSTEP_ONE_TURN;
+int16_t step_to_mm(int16_t value_step){
+    double value;
+    int16_t value_mm;
+    value = (double) value_step * WHEEL_PERIMETER / NSTEP_ONE_TURN;
+    value_mm=floor(value + 0.5);
     return value_mm;
 }

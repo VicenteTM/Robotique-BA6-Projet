@@ -6,8 +6,8 @@ int set_direction(int move, int direction);
 void wait_impact(void);
 uint16_t set_x(uint16_t distance,uint16_t direction);
 uint16_t set_y(uint16_t distance,uint16_t direction);
-uint16_t mm_to_step(uint16_t value_mm);
-uint16_t step_to_mm(uint16_t value_step);
+int16_t mm_to_step(int16_t value_mm);
+int16_t step_to_mm(int16_t value_step);
 
 #define ROTATION_COEFF			2.5
 #define GOAL_DISTANCE 			30.0f
