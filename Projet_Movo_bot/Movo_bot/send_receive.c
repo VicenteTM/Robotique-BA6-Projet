@@ -2,32 +2,31 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <usbcfg.h>
-
+#include <send_receive.h>
 #include <main.h>
 
-// static THD_WORKING_AREA(waReceiveCommand, 1024);
-// static THD_FUNCTION(ProcessImage, arg) {
+//static global
+static uint16_t data_received[2];
 
-//     chRegSetThreadName(__FUNCTION__);
-//     (void)arg;
+//semaphore
+static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);
 
-	
-// }
-
-uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint16_t size){
+uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint16_t size)
+{
 
 	volatile uint8_t c1, c2;
 	volatile uint16_t temp_size = 0;
-	//uint16_t i=0;
 
 	uint8_t state = 0;
-	while(state != 5){
+	while(state != 5)
+	{
 
         c1 = chSequentialStreamGet(in);
 
         //State machine to detect the string EOF\0S in order synchronize
         //with the frame received
-        switch(state){
+        switch(state)
+		{
         	case 0:
         		if(c1 == 'S')
         			state = 1;
@@ -80,13 +79,16 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 		c1 = chSequentialStreamGet(in);
 		c2 = chSequentialStreamGet(in);
 		data[0] = (int16_t)(c1);
+		c1 = chSequentialStreamGet(in);
+		c2 = chSequentialStreamGet(in);
+		data[1] = (int16_t)(c1);
 	}
 
 	return temp_size/2;
 
 }
 
-void SendUint8ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
+void SendUint16ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t size) 
 {
 	chSequentialStreamWrite(out, (uint8_t*)"START", 5);
 	chSequentialStreamWrite(out, (uint8_t*)&size, sizeof(uint16_t));
@@ -94,23 +96,34 @@ void SendUint8ToComputer(BaseSequentialStream* out, uint16_t* data, uint16_t siz
 }
 
 static THD_WORKING_AREA(waSendReceiveCommand, 1024);
-static THD_FUNCTION(SendReceiveCommand, arg) {
-
+static THD_FUNCTION(SendReceiveCommand, arg) 
+{
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t command[1];
-
-	while(1){
-    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, command, 1);
-        //chprintf((BaseSequentialStream *)&SDU1,"Size: %d \r\n",size);
-    	if(size == 1)
+	while(1)
+	{
+    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_received, 2);
+    	if(size == 2)
     	{
-			SendUint8ToComputer((BaseSequentialStream *) &SD3, command, 1);
-    	//	chprintf((BaseSequentialStream *)&SDU1,"Command: %d \r\n", command[0]);
+			chBSemSignal(&sendToEpuck_sem);
     	}
     }
 }
 
+void wait_send_to_epuck(void)
+{
+	chBSemWait(&sendToEpuck_sem);
+}
+
+uint16_t get_state(void)
+{
+	return data_received[0];
+}
+
+uint16_t get_command(void)
+{
+	return data_received[1];
+}
 
 void start_command_send_receive(void)
 {

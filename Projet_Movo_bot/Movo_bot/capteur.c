@@ -4,41 +4,70 @@
 #include <usbcfg.h>
 #include <sensors\proximity.h>
 #include <main.h>
-#include <sensors\proximity.h>
+#include <capteur.h>
+#include <send_receive.h>
 
-// static THD_WORKING_AREA(waReceiveCommand, 1024);
-// static THD_FUNCTION(ProcessImage, arg) {
+static BSEMAPHORE_DECL(capteur_Received_sem, TRUE);
 
-//     chRegSetThreadName(__FUNCTION__);
-//     (void)arg;
-
-	
-// }
-
-
-//MUTEX_DECL(bus_lock);
-//CONDVAR_DECL(bus_condvar);
+static uint16_t data_to_send[6];
 
 static THD_WORKING_AREA(waCapteur, 1024);
 static THD_FUNCTION(Capteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint32_t capteur;
-    uint32_t capteur_mm;
-    capteur=get_calibrated_prox(0);
-    chprintf((BaseSequentialStream *)&SD3," hey \r\n");
-    chprintf((BaseSequentialStream *)&SD3," %d \r\n",capteur);
+    uint16_t capteurNNE,capteurNNO,capteurNE,capteurNO,capteurE,capteurO;
+
   	while(1){
-        chThdSleepMilliseconds(1000);
-    	
-        chprintf((BaseSequentialStream *)&SD3," hey \r\n");
+            wait_send_to_epuck();
+            capteurNNE=get_calibrated_prox(FRONT_R_IR); //front front right
+  		    capteurNE=get_calibrated_prox(FRONT_RIGHT_IR); //front right
+  		    capteurE=get_calibrated_prox(RIGHT_IR); //right
+  		    capteurO=get_calibrated_prox(LEFT_IR); //left
+  		    capteurNO=get_calibrated_prox(FRONT_LEFT_IR); //front left
+  		    capteurNNO=get_calibrated_prox(FRONT_L_IR); //front front left
+            data_to_send[0] = capteurNNE;
+            data_to_send[1] = capteurNNO;
+            data_to_send[2] = capteurNE;
+            data_to_send[3] = capteurNO;
+            data_to_send[4] = capteurE;
+            data_to_send[5] = capteurO;
+            chBSemSignal(&capteur_Received_sem);
 
 	}
 }
 
+uint16_t get_counter_to_send(void){
+	return data_to_send[0];
+}
+
+uint16_t get_capteur_right_to_send(void){
+	return data_to_send[1];
+}
+
+uint16_t get_capteur_left_to_send(void){
+	return data_to_send[2];
+}
+
+uint16_t *get_capteur_values_to_send(void){
+	return data_to_send;
+}
+
+void calibrate(void){
+    data_to_send[1] = get_calibrated_prox(FRONT_R_IR); //front front right
+    data_to_send[2] = get_calibrated_prox(FRONT_L_IR); //front front left
+    chBSemSignal(&capteur_Received_sem);
+}
 
 void start_capteur(void)
 {
-    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+2, Capteur, NULL);    
+    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+1, Capteur, NULL);    
 }
+
+void wait_capteur_received(void){
+	chBSemWait(&capteur_Received_sem);
+}
+
+
+
+
