@@ -58,13 +58,13 @@ Deux possibilités s'offre à vous en fonction de votre matériel.
 
 2) Démarrer avec l'éxécutable *(Compatible seulement avec Windows 64bits)*
 
-Écrire le port dans le fichier text *WRITE_PORT_HERE.txt*
+    Écrire le port dans le fichier text *WRITE_PORT_HERE.txt*
 
-```txt
-comX
-```
+    ```txt
+    comX
+    ```
 
-Puis lancer l'éxécutable.
+    Puis lancer l'éxécutable.
 
 Où *comX* et *cu.usbmodemXXXX* est le port auquel l'e-puck2 est connecté par bluetooth à votre ordinateur.
 
