@@ -72,24 +72,15 @@ static THD_FUNCTION(Moteur, arg) {
                     case CONTROLANDREAD:
                         stop=0;
                         calibration_done=0;
-                        palWritePad(GPIOD, GPIOD_LED1,0);
-                        palWritePad(GPIOD, GPIOD_LED3,1);
-                        palWritePad(GPIOD, GPIOD_LED7,1);
-                        palWritePad(GPIOD, GPIOD_LED5,1);
                         break;
                     case CALIBRATION:
                     	if (!calibration_done){
-                    		palWritePad(GPIOD, GPIOD_LED1,1);
-                    		palWritePad(GPIOD, GPIOD_LED3,0);
-                    		palWritePad(GPIOD, GPIOD_LED7,0);
-                    		palWritePad(GPIOD, GPIOD_LED5,1);
                         pos_r_av=right_motor_get_pos();
                         while (right_motor_get_pos()>(pos_r_av-385))
         		        	{
                         	left_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_l applies the speed from the data_received and the correction for the rotation
                         	right_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_r applies the speed from the data_received and the correction for the rotation
                         	calibrate();
-                        	wait_capteur_received();
                         	data[0] = compteur;
                         	data[1] = (get_capteur_left_to_send()+get_capteur_right_to_send())/2;
                         	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
@@ -105,10 +96,6 @@ static THD_FUNCTION(Moteur, arg) {
                     	}
                         break;
                     case LIVEIMU:
-                		palTogglePad(GPIOD, GPIOD_LED1);
-                		palTogglePad(GPIOD, GPIOD_LED3);
-                		palTogglePad(GPIOD, GPIOD_LED7);
-                		palTogglePad(GPIOD, GPIOD_LED5);
                         chBSemSignal(&impact_sem);
                         calibration_done=0;
                         imu=1;
@@ -116,6 +103,9 @@ static THD_FUNCTION(Moteur, arg) {
                         break;
                 }
             if (!stop){
+                //if (abs(get_impact())>THRESHOLD)
+                 //    command = TURNAROUND;
+                 //else
             switch(get_command()){
         	case FORWARD:
         		pos_r_av=right_motor_get_pos();
@@ -144,25 +134,9 @@ static THD_FUNCTION(Moteur, arg) {
             case LEFT:
             	pos_r_av=right_motor_get_pos();
             	while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_QUARTER))
-            //if (abs(get_impact())>THRESHOLD)
-            //    command = TURNAROUND;
-            //else
             {
             	   left_motor_set_speed(-400);
             	   right_motor_set_speed(400);
-                case TURNAROUND:
-                    pos_r_av=right_motor_get_pos();
-                    while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
-                    {
-                        left_motor_set_speed(-400);
-                        right_motor_set_speed(400);
-                    }
-                    left_motor_set_speed(0);
-                    right_motor_set_speed(0);
-                    distance=0;
-                    direction=set_direction(TURNAROUND,direction);
-                    send=1;
-                    break;
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
@@ -190,6 +164,19 @@ static THD_FUNCTION(Moteur, arg) {
         	    distance=0;
         	    send=1;
                 break;
+            case TURNAROUND:
+                                pos_r_av=right_motor_get_pos();
+                                while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
+                                {
+                                    left_motor_set_speed(-400);
+                                    right_motor_set_speed(400);
+                                }
+                                left_motor_set_speed(0);
+                                right_motor_set_speed(0);
+                                distance=0;
+                                direction=set_direction(TURNAROUND,direction);
+                                send=1;
+                                break;
         }
             if (send){
                 wait_capteur_received();
