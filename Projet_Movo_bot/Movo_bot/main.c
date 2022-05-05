@@ -43,8 +43,6 @@ int main(void)
     serial_start();
     //starts the USB communication
     usb_start();
-    //starts timer 12
-    timer12_start();
     //inits the motors
     motors_init();
     impact_start();
