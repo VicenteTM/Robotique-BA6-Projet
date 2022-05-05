@@ -6,6 +6,8 @@ int set_direction(int move, int direction);
 void wait_impact(void);
 uint16_t set_x(uint16_t distance,uint16_t direction);
 uint16_t set_y(uint16_t distance,uint16_t direction);
+uint16_t mm_to_step(uint16_t value_mm);
+uint16_t step_to_mm(uint16_t value_step);
 
 #define ROTATION_COEFF			2.5
 #define GOAL_DISTANCE 			30.0f
@@ -13,10 +15,11 @@ uint16_t set_y(uint16_t distance,uint16_t direction);
 
 //values needed for the conversions counter/distance and for the turns
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
-#define WHEEL_PERIMETER     13 // [cm]
-#define NB_COUNTER_HALF  660 // number of step for 180� turn of the motor
-#define NB_COUNTER_QUARTER  330 // number of step for 90� turn of the motor theoretically 323 but +7 because the wheels are sliding a little
-#define NB_COUNTER_EIGHT  165 // number of step for '(� turn of the motor
+#define WHEEL_PERIMETER     130 // [mm]
+#define NB_COUNTER_HALF  84 // number of step for 180� turn of the motor theoretically (pi*D/2) [mm]
+#define NB_COUNTER_QUARTER  42 // number of mm for 90� turn of the motor theoretically (pi*D/4) [mm]
+#define SPEED       52      // [mm/s]
+#define DISTANCE_ONE    10 // distance pour faire un cm [mm]
 //values of the 4 commands
 #define NEUTRE 0
 #define FORWARD 1

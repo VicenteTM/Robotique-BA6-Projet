@@ -21,14 +21,6 @@
 #include <moteur.h>
 #include <capteur.h>
 #include <impact.h>
-//uncomment to send the FFTs results from the real microphones
-//#define SEND_FROM_MIC
-
-//uncomment to use double buffering to send the FFT to the computer
-#define DOUBLE_BUFFERING
-//messagebus_t bus;
-//MUTEX_DECL(bus_lock);
-//CONDVAR_DECL(bus_condvar);
 
 static void serial_start(void)
 {
@@ -42,7 +34,8 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-static void timer12_start(void){
+static void timer12_start(void)
+{
     //General Purpose Timer configuration   
     //timer 12 is a 16 bit timer so we can measure time
     //to about 65ms with a 1Mhz counter
@@ -60,12 +53,9 @@ static void timer12_start(void){
 
 int main(void)
 {
-
     halInit();
     chSysInit();
     mpu_init();
-    /** Inits the Inter Process Communication bus. */
-    //messagebus_init(&bus, &bus_lock, &bus_condvar);
     //starts the serial communication
     serial_start();
     //starts the USB communication
@@ -78,14 +68,11 @@ int main(void)
     proximity_start();
     calibrate_ir();
     start_moteur();
-    //start_command_reception();
-    //start_command_send();
     start_command_send_receive();
-    //#ifdef CAPTEUR_GRAPH
-    start_capteur(); // a remettre c'est pour envoyer les data
-    //#endif
+    start_capteur();
     /* Infinite loop. */
-    while (1) {
+    while (1) 
+    {
     	//waits 1 second
         chThdSleepMilliseconds(1000);
     }

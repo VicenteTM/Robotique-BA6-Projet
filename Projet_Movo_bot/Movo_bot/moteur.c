@@ -15,7 +15,8 @@ enum {X,Y,M_X,M_Y};     //enum des 4 directions pour pouvoir indiquer à l'ordin
 static BSEMAPHORE_DECL(impact_sem, TRUE);   //déclaration de la sémaphore permettant de vérifier si le robot a eu un impact
 
 static THD_WORKING_AREA(waMoteur, 1024);    //ce thread permet de gérer les commandes et états et fait tourner les roues en conséquence, il gère aussi l'envoi de données à l'ordinateur
-static THD_FUNCTION(Moteur, arg) {
+static THD_FUNCTION(Moteur, arg) 
+{
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
@@ -32,155 +33,128 @@ static THD_FUNCTION(Moteur, arg) {
     static int direction=X;
     int distance=0;
     static uint16_t data[10];
-	while(1){
-		/*
-		capteur=get_calibrated_prox(FRONT_R_IR);
-        speed_correction_r = (get_calibrated_prox(RIGHT_IR)-GOAL_DISTANCE);
-        speed_correction_l = (get_calibrated_prox(LEFT_IR)-GOAL_DISTANCE);
-        if (capteur>500){
-        	chprintf((BaseSequentialStream *)&SD3," wall \r\n");
-            pos_l_av=left_motor_get_pos();
-            pos_r_av=right_motor_get_pos();
-            // chBSemSignal(&sendToComputer_sem);  //push le mouvement ligne droite sur l'ordi avec la distance
-            while (left_motor_get_pos()<(pos_l_av+NB_COUNTER_QUARTER)) //Quarter fait un demi tour car le counter est divise par 2 lorsqu'on utilise un signal continu d'ou le fait qu'avec la commande pas besoin
+	while(1)
+    {
+        wait_send_to_epuck();
+            switch(get_state())
             {
-                 left_motor_set_speed(200);
-		        right_motor_set_speed(-200);
+                case IDLE:
+                    stop=1;
+                    calibration_done=0;
+                    break;
+                case CONTROLANDREAD:
+                    stop=0;
+                    calibration_done=0;
+                    break;
+                case CALIBRATION:
+                    if (!calibration_done){
+                    pos_r_av=right_motor_get_pos();
+                    if (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50mm
+                        {
+                        left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
+                        right_motor_set_speed(-mm_to_step(SPEED)/2);
+                        calibrate();
+                        data[0] = compteur;
+                        data[1] = (get_capteur_left_to_send()+get_capteur_right_to_send())/2;
+                        SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
+                        compteur++;
+                        }
+                    else 
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    send=0;
+                    compteur=0;
+                    stop=1;
+                    calibration_done=1;
+                    }
+                    break;
+                case LIVEIMU:
+                    chBSemSignal(&impact_sem);
+                    calibration_done=0;
+                    imu=1;
+                    stop=0;
+                    break;
             }
-            chprintf((BaseSequentialStream *)&SD3," wallend \r\n");
-            left_motor_set_speed(0);
-            right_motor_set_speed(0);
-            // chBSemSignal(&sendToComputer_sem);  //push sur l'ordi le virage
-        }
-
-        else{
-         */
-            wait_send_to_epuck();
-            /*
-            if (get_impact()){
-                   	 left_motor_set_speed(0);
-                   	 right_motor_set_speed(0);
-                   	 chprintf((BaseSequentialStream *)&SD3," impact \r\n");
-                }
-            else{
-            	*/
-                switch(get_state()){
-                    case IDLE:
-                        stop=1;
-                        calibration_done=0;
-                        break;
-                    case CONTROLANDREAD:
-                        stop=0;
-                        calibration_done=0;
-                        break;
-                    case CALIBRATION:
-                    	if (!calibration_done){
-                        pos_r_av=right_motor_get_pos();
-                        while (right_motor_get_pos()>(pos_r_av-385))
-        		        	{
-                        	left_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_l applies the speed from the data_received and the correction for the rotation
-                        	right_motor_set_speed(-200); // + ROTATION_COEFF*speed_correction_r applies the speed from the data_received and the correction for the rotation
-                        	calibrate();
-                        	data[0] = compteur;
-                        	data[1] = (get_capteur_left_to_send()+get_capteur_right_to_send())/2;
-                        	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);
-                        	compteur++;
-        		        	}
-                        left_motor_set_speed(0);
-                        right_motor_set_speed(0);
-        	        	distance=0;
-        	        	send=0;
-        	        	compteur=0;
-        	        	stop=1;
-        	        	calibration_done=1;
-                    	}
-                        break;
-                    case LIVEIMU:
-                        chBSemSignal(&impact_sem);
-                        calibration_done=0;
-                        imu=1;
-                        stop=0;
-                        break;
-                }
-            if (!stop){
-                //if (abs(get_impact())>THRESHOLD)
-                 //    command = TURNAROUND;
-                 //else
-            switch(get_command()){
-        	case FORWARD:
-        		pos_r_av=right_motor_get_pos();
-        		while (right_motor_get_pos()<(pos_r_av+77))
-        		            {
-                left_motor_set_speed(400); // + ROTATION_COEFF*speed_correction_l applies the speed from the data_received and the correction for the rotation
-        	    right_motor_set_speed(400); // + ROTATION_COEFF*speed_correction_r applies the speed from the data_received and the correction for the rotation
-        		            }
-        		distance = right_motor_get_pos()-pos_r_av;
-        		direction=set_direction(FORWARD,direction);
-        		send=1;
-        	    chprintf((BaseSequentialStream *)&SD3," forward \r\n"); // send to the computer that we moved 1cm
-                break;
-            case BACKWARD:
-            	pos_r_av=right_motor_get_pos();
-            	while (right_motor_get_pos()>(pos_r_av-77))
-            	         {
-            	     left_motor_set_speed(-400); // + ROTATION_COEFF*speed_correction_l applies the speed from the data_received and the correction for the rotation
-            	     right_motor_set_speed(-400); // + ROTATION_COEFF*speed_correction_r applies the speed from the data_received and the correction for the rotation
-            	  }
-            	distance = pos_r_av-right_motor_get_pos();
-            	direction=set_direction(BACKWARD,direction);
-        	    chprintf((BaseSequentialStream *)&SD3," backward \r\n");
-        	    send=1;
-                break;
-            case LEFT:
-            	pos_r_av=right_motor_get_pos();
-            	while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_QUARTER))
+        if (!stop)
+        {
+            //if (abs(get_impact())>THRESHOLD)
+                //    command = TURNAROUND;
+                //else
+            switch(get_command())
             {
-            	   left_motor_set_speed(-400);
-            	   right_motor_set_speed(400);
+                case FORWARD:
+                    pos_r_av=right_motor_get_pos();
+                    while (right_motor_get_pos()<(pos_r_av+(mm_to_step(DISTANCE_ONE)/2)))
+                    {
+                        left_motor_set_speed(mm_to_step(2*SPEED));
+                        right_motor_set_speed(mm_to_step(2*SPEED));
+                    }
+                    distance = right_motor_get_pos()-pos_r_av;
+                    direction=set_direction(FORWARD,direction);
+                    send=1;
+                    break;
+                case BACKWARD:
+                    pos_r_av=right_motor_get_pos();
+                    while (right_motor_get_pos()>(pos_r_av-mm_to_step(DISTANCE_ONE)))
+                    {
+                        left_motor_set_speed(-mm_to_step(SPEED));
+                        right_motor_set_speed(-mm_to_step(SPEED));
+                    }
+                    distance = right_motor_get_pos()-pos_r_av;
+                    direction=set_direction(BACKWARD,direction);
+                    send=1;
+                    break;
+                case LEFT:
+                    pos_r_av=right_motor_get_pos();
+                    while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_QUARTER)))
+                    {
+                    left_motor_set_speed(-mm_to_step(SPEED));
+                    right_motor_set_speed(mm_to_step(SPEED));
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    direction=set_direction(LEFT,direction);
+                    send=1;
+                    break;
+                case RIGHT:
+                    pos_l_av=left_motor_get_pos();
+                    while (left_motor_get_pos()<(pos_l_av+mm_to_step(NB_COUNTER_QUARTER)))
+                    {
+                        left_motor_set_speed(mm_to_step(SPEED));
+                        right_motor_set_speed(-mm_to_step(SPEED));
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    direction=set_direction(RIGHT,direction);
+                    send=1;
+                    break;
+                case NEUTRE:
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    send=1;
+                    break;
+                case TURNAROUND:
+                    pos_r_av=right_motor_get_pos();
+                    while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_HALF)))
+                    {
+                        left_motor_set_speed(-mm_to_step(SPEED));
+                        right_motor_set_speed(mm_to_step(SPEED));
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    direction=set_direction(TURNAROUND,direction);
+                    send=1;
+                    break;
             }
-                left_motor_set_speed(0);
-        	    right_motor_set_speed(0);
-        	    distance=0;
-        	    direction=set_direction(LEFT,direction);
-        	    send=1;
-                break;
-            case RIGHT:
-            	pos_l_av=left_motor_get_pos();
-            	while (left_motor_get_pos()<(pos_l_av+NB_COUNTER_QUARTER))
+            if (send)
             {
-            		left_motor_set_speed(400);
-            		right_motor_set_speed(-400);
-            }
-                left_motor_set_speed(0);
-        	    right_motor_set_speed(0);
-        	    distance=0;
-        	    direction=set_direction(RIGHT,direction);
-        	    send=1;
-                break;
-            case NEUTRE:
-                left_motor_set_speed(0);
-        	    right_motor_set_speed(0);
-        	    chprintf((BaseSequentialStream *)&SD3," stop \r\n");
-        	    distance=0;
-        	    send=1;
-                break;
-            case TURNAROUND:
-                                pos_r_av=right_motor_get_pos();
-                                while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
-                                {
-                                    left_motor_set_speed(-400);
-                                    right_motor_set_speed(400);
-                                }
-                                left_motor_set_speed(0);
-                                right_motor_set_speed(0);
-                                distance=0;
-                                direction=set_direction(TURNAROUND,direction);
-                                send=1;
-                                break;
-        }
-            if (send){
                 wait_capteur_received();
-                distance = distance * 10 * WHEEL_PERIMETER/ NSTEP_ONE_TURN;
+                distance = step_to_mm(distance);
                 coord_x_av += set_x(distance,direction);
                 coord_y_av += set_y(distance,direction);
                 data[0] = coord_x_av;
@@ -202,8 +176,8 @@ static THD_FUNCTION(Moteur, arg) {
                     SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 9);
                 send=0;
             }
-		}
-	}
+        }
+    }
 }
 
 int set_direction(int move,int direction)
@@ -284,3 +258,14 @@ void wait_impact(void)
 	chBSemWait(&impact_sem);
 }
 
+uint16_t mm_to_step(uint16_t value_mm){
+    uint16_t value_step;
+    value_step = value_mm * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+    return value_step;
+}
+
+uint16_t step_to_mm(uint16_t value_step){
+    uint16_t value_mm;
+    value_mm = (float) (value_step * WHEEL_PERIMETER) / NSTEP_ONE_TURN;
+    return value_mm;
+}
