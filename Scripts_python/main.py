@@ -18,7 +18,7 @@ def saveCalibrationCallback(val):
         with open(script_foleder + '/calibration.py', 'w') as doc:
             doc.write('Distance = [')
             for dist in reader_thd.captorD.dist:
-                doc.write(f'{"%.3f" % dist}, ')
+                doc.write(f'{"%.0f" % dist}, ')
             doc.write('] \n\n')
 
             doc.write('Intensity = [')

@@ -19,6 +19,7 @@ class Capteur_dist:
         self.direction = direction
         self.angle_rel = angle_rel
         self.ax = ax
+        self.threshold = 40
 
         self.direction.r = DISTANCE_CAPTOR_MAX_RANGE
         self.arrow = plt.arrow(self.position.x, self.position.y, self.direction.x, self.direction.y, length_includes_head = True, width = 0.01)
@@ -32,10 +33,12 @@ class Capteur_dist:
     
     def add_caption(self,intensity, calibrated):
         cap_r = self.direction
-        cap_r.r = convert_intensity_to_mm(intensity ,calibrated)
-        cap = self.position + cap_r
-        plotcap = self.ax.plot(cap.x, cap.y, "ro", ms = 1)
-        self.captions.append(plotcap)
+        captor_distance = convert_intensity_to_mm(intensity ,calibrated)
+        if captor_distance < self.threshold:
+            cap_r.r = captor_distance
+            cap = self.position + cap_r
+            plotcap = self.ax.plot(cap.x, cap.y, "ro", ms = 1)
+            self.captions.append(plotcap)
     
     def remove_captions(self):
         for caption in self.captions:
@@ -76,7 +79,7 @@ class Robot:
         self.ax.add_line(self.left_wheel)
 
         
-        self.coord = ax.text(5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y, f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}', style='italic',
+        self.coord = ax.text(5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y, f'Legend:\nX = {"%.0f" % self.position.x} Y= {"%.0f" % self.position.y} \nTheta = {"%.0f" % (self.direction.theta % 360)}', style='italic',
             bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
 
     def compute_capteur_position(self,capteur_angle):
@@ -124,7 +127,7 @@ class Robot:
         self.left_wheel.set(xdata = x_left_data, ydata = y_left_data)
 
         self.coord.set_position((5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y))
-        self.coord.set_text(f'Legend:\nX = {"%.3f" % self.position.x} Y= {"%.3f" % self.position.y} \nTheta = {"%.3f" % (self.direction.theta % 360)}')
+        self.coord.set_text(f'Legend:\nX = {"%.0f" % self.position.x} Y= {"%.0f" % self.position.y} \nTheta = {"%.0f" % (self.direction.theta % 360)}')
         
         sizefromrobot = 5 * ROBOT_DIAMETER
 
