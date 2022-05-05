@@ -45,6 +45,7 @@ static THD_FUNCTION(Moteur, arg)
                     calibration_done=0;
                     break;
                 case CONTROLANDREAD:
+                	chBSemSignal(&impact_sem);
                     stop=0;
                     calibration_done=0;
                     break;
@@ -83,17 +84,18 @@ static THD_FUNCTION(Moteur, arg)
             }
         if (!stop)
         {
-            //if (abs(get_impact())>THRESHOLD)
-                //    command = TURNAROUND;
-                //else
-            switch(get_command())
+            if (abs(get_impact())>THRESHOLD)
+                command = TURNAROUND;
+            else
+                command = get_command();
+            switch(command)
             {
                 case FORWARD:
                     pos_r_av=right_motor_get_pos();
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))
                     {
-                        left_motor_set_speed(mm_to_step(2*SPEED));
-                        right_motor_set_speed(mm_to_step(2*SPEED));
+                        left_motor_set_speed(mm_to_step(SPEED));
+                        right_motor_set_speed(mm_to_step(SPEED));
                     }
                     distance = right_motor_get_pos()-pos_r_av;
                     direction=set_direction(FORWARD,direction);

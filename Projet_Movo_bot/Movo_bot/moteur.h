@@ -11,15 +11,15 @@ int16_t step_to_mm(int16_t value_step);
 
 #define ROTATION_COEFF			2.5
 #define GOAL_DISTANCE 			30.0f
-#define THRESHOLD				1.0f
+#define THRESHOLD				0.5f
 
 //values needed for the conversions counter/distance and for the turns
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
 #define WHEEL_PERIMETER     130 // [mm]
 #define NB_COUNTER_HALF  84 // number of step for 180� turn of the motor theoretically (pi*D/2) [mm]
 #define NB_COUNTER_QUARTER  42 // number of mm for 90� turn of the motor theoretically (pi*D/4) [mm]
-#define SPEED       52      // [mm/s]
-#define DISTANCE_ONE    10 // distance pour faire un cm [mm]
+#define SPEED       80     // [mm/s]
+#define DISTANCE_ONE    5 // distance pour faire un cm [mm]
 //values of the 4 commands
 #define NEUTRE 0
 #define FORWARD 1
