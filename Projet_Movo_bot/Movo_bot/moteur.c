@@ -10,19 +10,19 @@
 #include "capteur.h"
 #include <impact.h>
 
-enum {X,Y,M_X,M_Y};
+enum {X,Y,M_X,M_Y};     //enum des 4 directions pour pouvoir indiquer à l'ordinateur le sens du robot ainsi que le calcul des coordonnées
 
-static BSEMAPHORE_DECL(impact_sem, TRUE);
+static BSEMAPHORE_DECL(impact_sem, TRUE);   //déclaration de la sémaphore permettant de vérifier si le robot a eu un impact
 
-static THD_WORKING_AREA(waMoteur, 1024);
+static THD_WORKING_AREA(waMoteur, 1024);    //ce thread permet de gérer les commandes et états et fait tourner les roues en conséquence, il gère aussi l'envoi de données à l'ordinateur
 static THD_FUNCTION(Moteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t send=0;
-    uint16_t stop=0;
-    uint32_t capteur_mm=0;
+    uint16_t send = 1;
+    uint16_t stop = 0;
     uint16_t calibration_done = 0;
+    uint16_t command;
     uint compteur=0;
     uint16_t imu=0;
     int16_t pos_l_av=0;
@@ -144,9 +144,25 @@ static THD_FUNCTION(Moteur, arg) {
             case LEFT:
             	pos_r_av=right_motor_get_pos();
             	while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_QUARTER))
+            //if (abs(get_impact())>THRESHOLD)
+            //    command = TURNAROUND;
+            //else
             {
             	   left_motor_set_speed(-400);
             	   right_motor_set_speed(400);
+                case TURNAROUND:
+                    pos_r_av=right_motor_get_pos();
+                    while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
+                    {
+                        left_motor_set_speed(-400);
+                        right_motor_set_speed(400);
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    distance=0;
+                    direction=set_direction(TURNAROUND,direction);
+                    send=1;
+                    break;
             }
                 left_motor_set_speed(0);
         	    right_motor_set_speed(0);
@@ -177,13 +193,6 @@ static THD_FUNCTION(Moteur, arg) {
         }
             if (send){
                 wait_capteur_received();
-                /*
-                data[0] = get_counter_to_send();
-                data[1] = get_capteur_right_to_send();
-                data[2] = get_capteur_left_to_send();
-                data[3] = direction;
-                data[4] = get_command();
-                */
                 distance = distance * 10 * WHEEL_PERIMETER/ NSTEP_ONE_TURN;
                 coord_x_av += set_x(distance,direction);
                 coord_y_av += set_y(distance,direction);
@@ -196,37 +205,25 @@ static THD_FUNCTION(Moteur, arg) {
                 data[6] = get_capteur_values_to_send()[3];
                 data[7] = get_capteur_values_to_send()[4];
                 data[8] = get_capteur_values_to_send()[5];
-                if (imu){
-                	data[9]= get_impact();
-                	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 10);
-                	imu=0;
-                	}
-                else
-                	SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 9);
-                send=0;
+                if (imu)
+                {
+                    data[9]= get_impact();
+                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 10);
+                    imu=0;
                 }
-            // if (abs(get_impact())>THRESHOLD){
-                //     pos_r_av=right_motor_get_pos();
-                //     while (right_motor_get_pos()<(pos_r_av+NB_COUNTER_HALF))
-                //     {
-                //     	left_motor_set_speed(-400);
-                //     	right_motor_set_speed(400);
-                //     }
-                //     left_motor_set_speed(0);
-                //     right_motor_set_speed(0);
-                //     distance=0;
-                //     direction=set_direction(BACKWARD,direction);
-                //     stop=1;
-                //     send=1;
-                //             }    
+                else
+                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 9);
+                send=0;
             }
-         //}
+		}
 	}
 }
 
-int set_direction(int move,int direction){
+int set_direction(int move,int direction)
+{
 	int16_t direction_f=0;
-    switch (move){
+    switch (move)
+    {
     	case FORWARD:
     		direction_f = direction;
     		break;
@@ -239,15 +236,20 @@ int set_direction(int move,int direction){
         	direction_f = (direction+1) % 4;
         	break;
         case BACKWARD:
+        	direction_f = direction;
+        	break;
+        case TURNAROUND:
         	direction_f = (direction+2) % 4;
         	break;
     }
     return direction_f;
 }
 
-uint16_t set_x(uint16_t distance,uint16_t direction){
+uint16_t set_x(uint16_t distance,uint16_t direction)
+{
     uint16_t distance_f=0;
-    switch(direction){
+    switch(direction)
+    {
         case X:
             distance_f=distance;
             break;
@@ -264,21 +266,23 @@ uint16_t set_x(uint16_t distance,uint16_t direction){
     return distance_f;
 }
 
-uint16_t set_y(uint16_t distance,uint16_t direction){
+uint16_t set_y(uint16_t distance,uint16_t direction)
+{
     uint16_t distance_f=0;
-    switch(direction){
-    case X:
-        distance_f=0;
-        break;
-    case M_X:
-        distance_f= 0;
-        break;
-    case Y:
-        distance_f = distance;
-        break;
-    case M_Y:
-        distance_f= -distance;
-        break;
+    switch(direction)
+    {
+        case X:
+            distance_f=0;
+            break;
+        case M_X:
+            distance_f= 0;
+            break;
+        case Y:
+            distance_f = distance;
+            break;
+        case M_Y:
+            distance_f= -distance;
+            break;
     }
     return distance_f;
 }
@@ -288,6 +292,8 @@ void start_moteur(void)
     chThdCreateStatic(waMoteur, sizeof(waMoteur), NORMALPRIO+2, Moteur, NULL);
 }
 
-void wait_impact(void){
+void wait_impact(void)
+{
 	chBSemWait(&impact_sem);
 }
+

@@ -11,19 +11,6 @@ static BSEMAPHORE_DECL(capteur_Received_sem, TRUE);
 
 static uint16_t data_to_send[6];
 
-// static THD_WORKING_AREA(waReceiveCommand, 1024);
-// static THD_FUNCTION(ProcessImage, arg) {
-
-//     chRegSetThreadName(__FUNCTION__);
-//     (void)arg;
-
-	
-// }
-
-
-//MUTEX_DECL(bus_lock);
-//CONDVAR_DECL(bus_condvar);
-
 static THD_WORKING_AREA(waCapteur, 1024);
 static THD_FUNCTION(Capteur, arg) {
 
@@ -32,8 +19,6 @@ static THD_FUNCTION(Capteur, arg) {
     uint16_t capteurNNE,capteurNNO,capteurNE,capteurNO,capteurE,capteurO;
     uint16_t counter=0;
     chprintf((BaseSequentialStream *)&SD3," hey \r\n");
-
-    
     wait_send_to_epuck();
     capteurNNE=get_calibrated_prox(FRONT_R_IR); //front front right
     data_to_send[0] = counter;

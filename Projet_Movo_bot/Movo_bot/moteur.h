@@ -6,8 +6,10 @@ int set_direction(int move, int direction);
 void wait_impact(void);
 uint16_t set_x(uint16_t distance,uint16_t direction);
 uint16_t set_y(uint16_t distance,uint16_t direction);
+
 #define ROTATION_COEFF			2.5
-#define GOAL_DISTANCE 			300.0f
+#define GOAL_DISTANCE 			30.0f
+#define THRESHOLD				1.0f
 
 //values needed for the conversions counter/distance and for the turns
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
@@ -21,6 +23,7 @@ uint16_t set_y(uint16_t distance,uint16_t direction);
 #define BACKWARD 2
 #define LEFT 3
 #define RIGHT 4
+#define TURNAROUND 5
 
 #define IDLE 0
 #define CONTROLANDREAD 1
