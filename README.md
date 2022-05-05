@@ -47,24 +47,24 @@ Deux possibilités s'offre à vous en fonction de votre matériel.
     - Sur Mac
 
     ```bash
-    python3 path_to_the_script/Scripts_python/main.py /dev/cu.usbmodemXXXX
+    python3 path_to_the_script/Scripts_python/ep2-movobot.py /dev/cu.usbmodemXXXX
     ```
 
     - Sur Windows
 
     ```cmd
-    python path_to_the_script\Scripts_python\main.py comX
+    python path_to_the_script\Scripts_python\ep2-movobot.py comX
     ```
 
 2) Démarrer avec l'éxécutable *(Compatible seulement avec Windows 64bits)*
 
-    Écrire le port dans le fichier text *WRITE_PORT_HERE.txt*
+    Écrire le port dans le fichier text *path_to_the_script\Scripts_python\precompiled_for_windows64bits\WRITE_PORT_HERE.txt*
 
     ```txt
     comX
     ```
 
-    Puis lancer l'éxécutable.
+    Puis lancer l'éxécutable *path_to_the_script\Scripts_python\precompiled_for_windows64bits\ep2-movobot.exe*.
 
 Où *comX* et *cu.usbmodemXXXX* est le port auquel l'e-puck2 est connecté par bluetooth à votre ordinateur.
 

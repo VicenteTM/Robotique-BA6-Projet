@@ -45,7 +45,7 @@ Scripts_python/TP_exemples
 *.dylib
 
 # Executables
-*.exe
+# *.exe
 *.out
 *.app
 *.i*86
