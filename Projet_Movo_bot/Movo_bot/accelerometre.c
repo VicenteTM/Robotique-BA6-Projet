@@ -7,11 +7,12 @@
 #include <capteur.h>
 #include <moteur.h>
 
-messagebus_t bus;
-MUTEX_DECL(bus_lock);
-CONDVAR_DECL(bus_condvar);
+messagebus_t bus;           //declaration of the bus used to memorize the imu values
+MUTEX_DECL(bus_lock);       //
+CONDVAR_DECL(bus_condvar);  //
 
-static int acceleration_y;
+//static global
+static int acceleration_y;     //value of the acceleration in the y direction
 
 static void timer11_start(void)
 {
@@ -30,32 +31,33 @@ static void timer11_start(void)
     gptStartContinuous(&GPTD11, 0xFFFF);
 }
 
+//thread
 static THD_WORKING_AREA(waAccelerometre, 1024);
-static THD_FUNCTION(Accelerometre, arg) {
+static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure the acceleration of the IMU and memorize them in a static int value
+{
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu"); 
     imu_msg_t imu_values;
     acceleration_y=0;
      while(1)
     {
-    	wait_accelerometre();
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    	get_gravity(&imu_values);
+    	wait_accelerometre_mesure();    //attend que la semaphore soit libre, c'est a� dire que le module moteur ait besoin de la valeur
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // attend que des nouvelles valeurs de l'imu soient publiees
+    	get_gravity(&imu_values);   //recupere la valeur de l'acceleration en y
     }
 }
 
 void get_gravity(imu_msg_t *imu_values)
 {
-    //create a pointer to the array for shorter name
-    float *accel = imu_values->acceleration;
+    float *accel = imu_values->acceleration;	//create a pointer to the array for shorter name
     acceleration_y = accel[Y_AXIS];
 }
 
 int get_acceleration_y(void)
 {
-	return acceleration_y;
+	return acceleration_y;  //return the value of the acceleration in the y direction of the robot
 }
 
 void start_accelerometre(void)
@@ -64,7 +66,6 @@ void start_accelerometre(void)
     timer11_start();
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO, Accelerometre, NULL);
-    //wait 2 sec to be sure the e-puck is in a stable position
-    chThdSleepMilliseconds(2000);
+    chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO, Accelerometre, NULL); //creation of the Accelerometre thread
+    chThdSleepMilliseconds(2000);    //waits two secondes to make sure the epuck is stable
 }

@@ -5,10 +5,10 @@
 #include <send_receive.h>
 
 //static global
-static uint16_t data_received[2];
+static uint16_t data_received[2];	 //array containing the instructions of the computer
 
 //semaphore
-static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);
+static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);   //declaration of the semaphore allowing the threads to access the instructions of the computer
 
 uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint16_t size)
 {
@@ -104,27 +104,27 @@ static THD_FUNCTION(SendReceiveCommand, arg)
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_received, 2);
     	if(size == 2)
     	{
-			chBSemSignal(&sendToEpuck_sem);
+			chBSemSignal(&sendToEpuck_sem);		//free the semaphore to indicate the robot has received the computer's instructions
     	}
     }
 }
 
 void wait_send_to_epuck(void)
 {
-	chBSemWait(&sendToEpuck_sem);
+	chBSemWait(&sendToEpuck_sem);  //wait until the semaphore is free
 }
 
 uint16_t get_state(void)
 {
-	return data_received[0];
+	return data_received[0];	//return the value of the state sent by the computer
 }
 
 uint16_t get_command(void)
 {
-	return data_received[1];
+	return data_received[1];	//return the value of the command sent by the computer
 }
 
 void start_command_send_receive(void)
 {
-    chThdCreateStatic(waSendReceiveCommand, sizeof(waSendReceiveCommand), NORMALPRIO, SendReceiveCommand, NULL);
+    chThdCreateStatic(waSendReceiveCommand, sizeof(waSendReceiveCommand), NORMALPRIO, SendReceiveCommand, NULL);	//creation of the SendReceive thread 
 }

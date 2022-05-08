@@ -36,25 +36,21 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-    i2c_start();
-    imu_start();
-    //starts the serial communication
-    serial_start();
-    //starts the USB communication
-    usb_start();
-    //inits the motors
-    motors_init();
-    start_accelerometre();
-    proximity_start();
-    calibrate_ir();
-    start_moteur();
-    start_command_send_receive();
-    start_capteur();
+    i2c_start();    //inits the I2C bus
+    imu_start();    //inits the IMU   
+    serial_start();   //starts the serial communication
+    usb_start();     //starts the USB communication
+    start_accelerometre();  //inits the Accelerometre thread
+    proximity_start();  //inits the proximity sensors
+    calibrate_ir();     //calibrate the proximity sensors
+    motors_init();      //inits the motors
+    start_moteur();     //inits the Moteur thread
+    start_command_send_receive();   //inits the SendReceive thread
+    start_capteur();    //inits the Capteur thread
     /* Infinite loop. */
     while (1) 
     {
-    	//waits 1 second
-        chThdSleepMilliseconds(1000);
+        chThdSleepMilliseconds(1000);    	//waits 1 second
     }
 
 }

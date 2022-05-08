@@ -3,64 +3,68 @@
 //#include <chprintf.h>
 //#include <usbcfg.h>
 #include <sensors\proximity.h>
+
 #include <capteur.h>
 #include <send_receive.h>
 
-static BSEMAPHORE_DECL(capteur_Received_sem, TRUE);
+//static global
+static uint16_t data_to_send[8];   //array containing all the intensities of the proximity sensors
 
-static uint16_t data_to_send[8];
+//semaphore
+static BSEMAPHORE_DECL(capteur_Received_sem, TRUE); //declaration of the semaphore allowing the thread Capteur to get the proximity sensors intensity
 
+//thread
 static THD_WORKING_AREA(waCapteur, 1024);
-static THD_FUNCTION(Capteur, arg) {
+static THD_FUNCTION(Capteur, arg)      //this thread is used to measure the intensity of the proximity sensors and memorize them in an array
+{
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
   	while(1){
             wait_send_to_epuck();
-            data_to_send[0] = get_calibrated_prox(FRONT_R_IR); //front front right
-            data_to_send[1] = get_calibrated_prox(FRONT_L_IR); //front front left
-            data_to_send[2] = get_calibrated_prox(FRONT_RIGHT_IR); //front right
-            data_to_send[3] = get_calibrated_prox(FRONT_LEFT_IR); //front left
-            data_to_send[4] = get_calibrated_prox(RIGHT_IR); //right
-            data_to_send[5] = get_calibrated_prox(LEFT_IR); //left
-            data_to_send[6] = get_calibrated_prox(BACK_RIGHT_IR); //right
-            data_to_send[7] = get_calibrated_prox(BACK_LEFT_IR); //left
-            chBSemSignal(&capteur_Received_sem);
-            //waits 0.1 second 
-            chThdSleepMilliseconds(100);
+            data_to_send[0] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
+            data_to_send[1] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
+            data_to_send[2] = get_calibrated_prox(FRONT_RIGHT_IR); //get intensity from the front right proximity sensor
+            data_to_send[3] = get_calibrated_prox(FRONT_LEFT_IR); //get intensity from the front left proximity sensor
+            data_to_send[4] = get_calibrated_prox(RIGHT_IR); //get intensity from the right proximity sensor
+            data_to_send[5] = get_calibrated_prox(LEFT_IR); //get intensity from the left proximity sensor
+            data_to_send[6] = get_calibrated_prox(BACK_RIGHT_IR); //get intensity from the right proximity sensor
+            data_to_send[7] = get_calibrated_prox(BACK_LEFT_IR); //get intensity from the left proximity sensor
+            chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
+            chThdSleepMilliseconds(100);	 //waits 0.1 second
 	}
 }
 
-uint16_t get_counter_to_send(void){
-	return data_to_send[0];
-}
-
-uint16_t get_capteur_right_to_send(void){
-	return data_to_send[1];
-}
-
-uint16_t get_capteur_left_to_send(void){
-	return data_to_send[2];
-}
-
-uint16_t *get_capteur_values_to_send(void){
-	return data_to_send;
+uint16_t get_counter_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+	return data_to_send[0];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+uint16_t get_capteur_right_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+	return data_to_send[1];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+uint16_t get_capteur_left_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+	return data_to_send[2];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+uint16_t *get_capteur_values_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+	return data_to_send;    //return the pointer to the array containing the intensity of the proximity sensors
 }
 
 void calibrate(void){
-    data_to_send[1] = get_calibrated_prox(FRONT_R_IR); //front front right
-    data_to_send[2] = get_calibrated_prox(FRONT_L_IR); //front front left
-    chBSemSignal(&capteur_Received_sem);
+    data_to_send[1] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
+    data_to_send[2] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
+    chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
 }
 
 void start_capteur(void)
 {
-    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+1, Capteur, NULL);    
+    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+1, Capteur, NULL); //creation of the Capteur thread    
 }
 
 void wait_capteur_received(void){
-	chBSemWait(&capteur_Received_sem);
+	chBSemWait(&capteur_Received_sem);  //wait until the semaphore is free
 }
 
 
