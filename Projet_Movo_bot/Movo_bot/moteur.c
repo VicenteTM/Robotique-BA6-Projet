@@ -1,14 +1,13 @@
+#include <stdlib.h>
+
 #include "ch.h"
 #include "hal.h"
-#include <chprintf.h>
-#include <usbcfg.h>
-#include<math.h>
-#include <sensors\proximity.h>
-#include <main.h>
+#include <math.h>
+//#include <chprintf.h>
 #include <motors.h>
 #include <moteur.h>
 #include <send_receive.h>
-#include "capteur.h"
+#include <capteur.h>
 #include <impact.h>
 
 enum {X,Y,M_X,M_Y};     //enum des 4 directions pour pouvoir indiquer à l'ordinateur le sens du robot ainsi que le calcul des coordonnées
@@ -25,7 +24,7 @@ static THD_FUNCTION(Moteur, arg)
     uint16_t stop = 0;
     uint16_t calibration_done = 0;
     uint16_t command;
-    uint compteur=0;
+    uint16_t compteur=0;
     uint16_t imu=0;
     int16_t pos_l_av=0;
     int16_t pos_r_av=0;

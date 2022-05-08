@@ -1,13 +1,9 @@
 #include <ch.h>
 #include <hal.h>
 #include <math.h>
-#include <chprintf.h>
+//#include <chprintf.h>
 #include <msgbus/messagebus.h>
-#include <i2c_bus.h>
-#include <sensors/imu.h>
-#include <motors.h>
 #include <impact.h>
-#include <send_receive.h>
 #include <capteur.h>
  
 messagebus_t bus;
@@ -66,8 +62,6 @@ void impact_start(void)
 {
     /* System init */
     timer11_start();
-    i2c_start();
-    imu_start();
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     chThdCreateStatic(waImpact, sizeof(waImpact), NORMALPRIO, Impact, NULL);

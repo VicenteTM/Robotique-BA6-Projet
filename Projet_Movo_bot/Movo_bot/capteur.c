@@ -1,9 +1,8 @@
 #include "ch.h"
 #include "hal.h"
-#include <chprintf.h>
-#include <usbcfg.h>
+//#include <chprintf.h>
+//#include <usbcfg.h>
 #include <sensors\proximity.h>
-#include <main.h>
 #include <capteur.h>
 #include <send_receive.h>
 

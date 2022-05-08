@@ -7,13 +7,10 @@
 #include "memory_protection.h"
 #include <usbcfg.h>
 #include <main.h>
-#include <chprintf.h>
+//#include <chprintf.h>
 #include <motors.h>
-#include <audio/microphone.h>
 #include <sensors/proximity.h>
-#include <arm_math.h>
-
-#include <msgbus/messagebus.h>
+//#include <msgbus/messagebus.h>
 #include <i2c_bus.h>
 #include <sensors/imu.h>
 
@@ -39,6 +36,8 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
+    i2c_start();
+    imu_start();
     //starts the serial communication
     serial_start();
     //starts the USB communication

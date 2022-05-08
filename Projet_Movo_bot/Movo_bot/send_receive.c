@@ -1,9 +1,8 @@
 #include "ch.h"
 #include "hal.h"
-#include <chprintf.h>
+//#include <chprintf.h>
 #include <usbcfg.h>
 #include <send_receive.h>
-#include <main.h>
 
 //static global
 static uint16_t data_received[2];
