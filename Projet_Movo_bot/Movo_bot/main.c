@@ -17,7 +17,7 @@
 #include <send_receive.h>
 #include <moteur.h>
 #include <capteur.h>
-#include <impact.h>
+#include <accelerometre.h>
 
 static void serial_start(void)
 {
@@ -44,7 +44,7 @@ int main(void)
     usb_start();
     //inits the motors
     motors_init();
-    impact_start();
+    start_accelerometre();
     proximity_start();
     calibrate_ir();
     start_moteur();

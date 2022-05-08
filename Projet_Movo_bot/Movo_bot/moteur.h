@@ -3,7 +3,7 @@
 
 void start_moteur(void);
 int set_direction(int move, int direction);
-void wait_impact(void);
+void wait_accelerometre(void);
 uint16_t set_x(uint16_t distance,uint16_t direction);
 uint16_t set_y(uint16_t distance,uint16_t direction);
 int16_t mm_to_step(int16_t value_mm);

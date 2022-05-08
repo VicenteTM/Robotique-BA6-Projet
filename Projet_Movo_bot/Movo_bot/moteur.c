@@ -8,11 +8,11 @@
 #include <moteur.h>
 #include <send_receive.h>
 #include <capteur.h>
-#include <impact.h>
+#include <accelerometre.h>
 
 enum {X,Y,M_X,M_Y};     //enum des 4 directions pour pouvoir indiquer à l'ordinateur le sens du robot ainsi que le calcul des coordonnées
 
-static BSEMAPHORE_DECL(impact_sem, TRUE);   //déclaration de la sémaphore permettant de vérifier si le robot a eu un impact
+static BSEMAPHORE_DECL(accelerometre_sem, TRUE);   //déclaration de la sémaphore permettant de récupérer la valeur de l'accéleration en y
 
 static THD_WORKING_AREA(waMoteur, 1024);    //ce thread permet de gérer les commandes et états et fait tourner les roues en conséquence, il gère aussi l'envoi de données à l'ordinateur
 static THD_FUNCTION(Moteur, arg) 
@@ -32,7 +32,7 @@ static THD_FUNCTION(Moteur, arg)
     int16_t coord_y_av = 0;
     static int direction=X;
     int distance=0;
-    static uint16_t data[10];
+    static uint16_t data[12];
 	while(1)
     {
         wait_send_to_epuck();
@@ -43,7 +43,7 @@ static THD_FUNCTION(Moteur, arg)
                     calibration_done=0;
                     break;
                 case CONTROLANDREAD:
-                	chBSemSignal(&impact_sem);
+                	chBSemSignal(&accelerometre_sem);
                     stop=0;
                     calibration_done=0;
                     break;
@@ -69,7 +69,7 @@ static THD_FUNCTION(Moteur, arg)
                     }
                     break;
                 case LIVEIMU:
-                    chBSemSignal(&impact_sem);
+                    chBSemSignal(&accelerometre_sem);
                     calibration_done=0;
                     imu=1;
                     stop=0;
@@ -77,7 +77,7 @@ static THD_FUNCTION(Moteur, arg)
             }
         if (!stop)
         {
-            if (abs(get_impact())>THRESHOLD)
+            if (abs(get_acceleration_y())>THRESHOLD)
                 command = TURNAROUND;
             else
                 command = get_command();
@@ -166,14 +166,16 @@ static THD_FUNCTION(Moteur, arg)
                 data[6] = get_capteur_values_to_send()[3];
                 data[7] = get_capteur_values_to_send()[4];
                 data[8] = get_capteur_values_to_send()[5];
+                data[9] = get_capteur_values_to_send()[6];
+                data[10] = get_capteur_values_to_send()[7];
                 if (imu)
                 {
-                    data[9]= get_impact();
-                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 10);
+                    data[11]= get_acceleration_y();
+                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 12);
                     imu=0;
                 }
                 else
-                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 9);
+                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);
                 send=0;
             }
         }
@@ -253,9 +255,9 @@ void start_moteur(void)
     chThdCreateStatic(waMoteur, sizeof(waMoteur), NORMALPRIO+2, Moteur, NULL);
 }
 
-void wait_impact(void)
+void wait_accelerometre(void)
 {
-	chBSemWait(&impact_sem);
+	chBSemWait(&accelerometre_sem);
 }
 
 int16_t mm_to_step(int16_t value_mm){

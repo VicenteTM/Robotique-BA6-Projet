@@ -8,31 +8,27 @@
 
 static BSEMAPHORE_DECL(capteur_Received_sem, TRUE);
 
-static uint16_t data_to_send[6];
+static uint16_t data_to_send[8];
 
 static THD_WORKING_AREA(waCapteur, 1024);
 static THD_FUNCTION(Capteur, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t capteurNNE,capteurNNO,capteurNE,capteurNO,capteurE,capteurO;
 
   	while(1){
             wait_send_to_epuck();
-            capteurNNE=get_calibrated_prox(FRONT_R_IR); //front front right
-  		    capteurNE=get_calibrated_prox(FRONT_RIGHT_IR); //front right
-  		    capteurE=get_calibrated_prox(RIGHT_IR); //right
-  		    capteurO=get_calibrated_prox(LEFT_IR); //left
-  		    capteurNO=get_calibrated_prox(FRONT_LEFT_IR); //front left
-  		    capteurNNO=get_calibrated_prox(FRONT_L_IR); //front front left
-            data_to_send[0] = capteurNNE;
-            data_to_send[1] = capteurNNO;
-            data_to_send[2] = capteurNE;
-            data_to_send[3] = capteurNO;
-            data_to_send[4] = capteurE;
-            data_to_send[5] = capteurO;
+            data_to_send[0] = get_calibrated_prox(FRONT_R_IR); //front front right
+            data_to_send[1] = get_calibrated_prox(FRONT_L_IR); //front front left
+            data_to_send[2] = get_calibrated_prox(FRONT_RIGHT_IR); //front right
+            data_to_send[3] = get_calibrated_prox(FRONT_LEFT_IR); //front left
+            data_to_send[4] = get_calibrated_prox(RIGHT_IR); //right
+            data_to_send[5] = get_calibrated_prox(LEFT_IR); //left
+            data_to_send[6] = get_calibrated_prox(BACK_RIGHT_IR); //right
+            data_to_send[7] = get_calibrated_prox(BACK_LEFT_IR); //left
             chBSemSignal(&capteur_Received_sem);
-
+            //waits 0.1 second 
+            chThdSleepMilliseconds(100);
 	}
 }
 

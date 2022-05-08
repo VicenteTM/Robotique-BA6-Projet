@@ -13,7 +13,7 @@ CSRC += ./main.c \
 		./send_receive.c \
 		./moteur.c \
 		./capteur.c \
-		./impact.c \
+		./accelerometre.c \
 #Header folders to include
 INCDIR += 
 
