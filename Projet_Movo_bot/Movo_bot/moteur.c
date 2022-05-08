@@ -23,7 +23,6 @@ static THD_FUNCTION(Moteur, arg)
     (void)arg;
     uint16_t send = 1;
     uint16_t stop = 0;
-    uint16_t calibration_start=1;
     uint16_t calibration_done = 0;
     uint16_t command;
     uint compteur=0;
@@ -51,10 +50,6 @@ static THD_FUNCTION(Moteur, arg)
                     break;
                 case CALIBRATION:
                     if (!calibration_done){
-                    	if (calibration_start){
-                    		pos_r_av=right_motor_get_pos();
-                    		calibration_start=0;
-                    	}
                     while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50mm
                         {
                         left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
@@ -71,7 +66,6 @@ static THD_FUNCTION(Moteur, arg)
                     send=0;
                     compteur=0;
                     stop=1;
-                    calibration_start=1;
                     calibration_done=1;
                     }
                     break;
