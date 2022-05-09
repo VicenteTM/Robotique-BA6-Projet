@@ -43,7 +43,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     calibration_done = false;
                     break;
                 case CONTROLANDREAD:
-                	send_accelerometre_mesure();    //free the semaphore accelerometre_mesure to check if there has been an impact
+                	//send_accelerometre_mesure();    //free the semaphore accelerometre_mesure to check if there has been an impact
                     stop_command = false;
                     calibration_done = false;
                     break;
@@ -68,7 +68,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     break;
                 case LIVEIMU:
-                	send_accelerometre_mesure();     //free the semaphore accelerometre_mesure to plot the acceleration with time
+                	//send_accelerometre_mesure();     //free the semaphore accelerometre_mesure to plot the acceleration with time
                     calibration_done = false;
                     imu = true;     //we are going to use the imu
                     stop_command = false;   //when we plot the live IMU, the commands are still active
@@ -76,8 +76,15 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
             }
         if (!stop_command)  //if the commands aren't blocked
         {
-            if (abs(get_acceleration_y())>THRESHOLD)    //if an impact is detected
-                command = TURNAROUND;   //change the command received by the computed to the emergency protocol
+            if (get_impact())    //if an impact is detected
+            {
+                if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>1000)
+                    command = TURNAROUND;   //change the command received by the computed to the emergency protocol
+                else{
+                	command = get_command();
+                	reset_impact();
+                }
+            }
             else
                 command = get_command();    //get the command from the value sent by the computer
             switch(command)         //treat the command sent by the computer
@@ -150,6 +157,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     distance=0;     //the robot has turned on himself, it didn't change coordinates
                     direction=set_direction(TURNAROUND,direction);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
+                    reset_impact();
                     break;
             }
             if (send)
@@ -171,7 +179,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 data[10] = get_capteur_values_to_send()[7]; //
                 if (imu)    //if we are using the imu
                 {
-                    data[11]= get_acceleration_y();                                 //send the data including the acceleration in y direction
+                    data[11]= get_acceleration_y()*10;                                 //send the data including the acceleration in y direction
                     SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 12);  //
                     imu = false;    //reset variable
                 }

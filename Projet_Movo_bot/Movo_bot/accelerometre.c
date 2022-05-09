@@ -15,7 +15,8 @@ MUTEX_DECL(bus_lock);       //
 CONDVAR_DECL(bus_condvar);  //
 
 //static global
-static int acceleration_y;     //value of the acceleration in the y direction
+static float acceleration_y;     //value of the acceleration in the y direction
+static uint8_t impact;
 
 //semaphore
 static BSEMAPHORE_DECL(accelerometre_mesure_sem, TRUE);   //declaration of the semaphore allowing the thread Accelerometre to get the value of the y acceleration
@@ -48,11 +49,14 @@ static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure 
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu"); 
     imu_msg_t imu_values;
     acceleration_y=0;
+    impact=false;
      while(1)
     {
-    	wait_accelerometre_mesure();    //attend que la semaphore soit libre, c'est a� dire que le module moteur ait besoin de la valeur
+    	//wait_accelerometre_mesure();    //attend que la semaphore soit libre, c'est a� dire que le module moteur ait besoin de la valeur
     	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // attend que des nouvelles valeurs de l'imu soient publiees
     	get_gravity(&imu_values);   //recupere la valeur de l'acceleration en y
+    	if(acceleration_y>THRESHOLD)
+    	    	impact = true;
     }
 }
 
@@ -60,18 +64,29 @@ void get_gravity(imu_msg_t *imu_values)
 {
     float *accel = imu_values->acceleration;	//create a pointer to the array for shorter name
     acceleration_y = accel[Y_AXIS];
+
 }
 
-int get_acceleration_y(void)
+float get_acceleration_y(void)
 {
 	return acceleration_y;  //return the value of the acceleration in the y direction of the robot
+}
+
+uint8_t get_impact(void)
+{
+	return impact;  //return if the impact has happened or not
+}
+
+void reset_impact(void)
+{
+	impact=false;  //reset impact to default value
 }
 
 void start_accelerometre(void)
 {
     /* System init */
     timer11_start();
-    i2c_start();    //inits the I2C bus
+    i2c_start();    //inits the I2C bu(get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;s
     imu_start();    //inits the IMU
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
