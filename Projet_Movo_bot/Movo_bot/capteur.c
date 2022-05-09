@@ -36,26 +36,15 @@ static THD_FUNCTION(Capteur, arg)      //this thread is used to measure the inte
 	}
 }
 
-uint16_t get_counter_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-	return data_to_send[0];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-uint16_t get_capteur_right_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-	return data_to_send[1];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-uint16_t get_capteur_left_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-	return data_to_send[2];//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-}//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
-uint16_t *get_capteur_values_to_send(void){//Je veux les virer mais la derniere fois ca a pas marche je vais reessayer
+uint16_t *get_capteur_values_to_send(void)
+{
 	return data_to_send;    //return the pointer to the array containing the intensity of the proximity sensors
 }
 
 void calibrate(void){
     data_to_send[1] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
     data_to_send[2] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
-    chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
+    //chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
 }
 
 void start_capteur(void)

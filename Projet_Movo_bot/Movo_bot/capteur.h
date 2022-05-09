@@ -1,8 +1,6 @@
 #ifndef CAPTEUR
 #define CAPTEUR
 
-uint16_t get_capteur_right_to_send(void);
-uint16_t get_capteur_left_to_send(void);
 uint16_t *get_capteur_values_to_send(void);
 void start_capteur(void);
 void calibrate(void);

@@ -57,7 +57,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                         right_motor_set_speed(-mm_to_step(SPEED)/2);
                         calibrate();    //get the intensity of the two front proximity sensors
                         data[0] = compteur; //x value to plot on the graph corresponding to the distance the robot has moved
-                        data[1] = (get_capteur_left_to_send()+get_capteur_right_to_send())/2;   //y value to plot corresponding to the average intensity of the 2 front proximity sensors
+                        data[1] = (get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;   //y value to plot corresponding to the average intensity of the 2 front proximity sensors
                         SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);   //send the 2 values to the computer
                         compteur++;
                         }
