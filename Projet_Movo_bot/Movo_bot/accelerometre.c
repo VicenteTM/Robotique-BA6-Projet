@@ -17,6 +17,10 @@ CONDVAR_DECL(bus_condvar);  //
 //static global
 static int acceleration_y;     //value of the acceleration in the y direction
 
+//semaphore
+static BSEMAPHORE_DECL(accelerometre_mesure_sem, TRUE);   //declaration of the semaphore allowing the thread Accelerometre to get the value of the y acceleration
+
+
 static void timer11_start(void)
 {
     //General Purpose Timer configuration   
@@ -73,4 +77,14 @@ void start_accelerometre(void)
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO, Accelerometre, NULL); //creation of the Accelerometre thread
     chThdSleepMilliseconds(2000);    //waits two secondes to make sure the epuck is stable
+}
+
+void wait_accelerometre_mesure(void)
+{
+	chBSemWait(&accelerometre_mesure_sem);  //wait until the semaphore is free
+}
+
+void send_accelerometre_mesure(void)
+{
+	chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to check if there has been an impact
 }

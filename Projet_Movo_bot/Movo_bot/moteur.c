@@ -12,8 +12,6 @@
 
 enum {X,Y,M_X,M_Y};     //enum of the 4 directions in anti-clockwise order to indicate to the computer the robot's direction and to calculate the coordinates
 
-//semaphore
-static BSEMAPHORE_DECL(accelerometre_mesure_sem, TRUE);   //declaration of the semaphore allowing the thread Accelerometre to get the value of the y acceleration
 
 //thread
 static THD_WORKING_AREA(waMoteur, 1024);
@@ -45,7 +43,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     calibration_done = false;
                     break;
                 case CONTROLANDREAD:
-                	chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to check if there has been an impact
+                	send_accelerometre_mesure();    //free the semaphore accelerometre_mesure to check if there has been an impact
                     stop_command = false;
                     calibration_done = false;
                     break;
@@ -70,7 +68,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     break;
                 case LIVEIMU:
-                    chBSemSignal(&accelerometre_mesure_sem);     //free the semaphore accelerometre_mesure to plot the acceleration with time
+                	send_accelerometre_mesure();     //free the semaphore accelerometre_mesure to plot the acceleration with time
                     calibration_done = false;
                     imu = true;     //we are going to use the imu
                     stop_command = false;   //when we plot the live IMU, the commands are still active
@@ -256,11 +254,6 @@ uint16_t set_y(uint16_t distance,uint16_t direction)
 void start_moteur(void)
 {
     chThdCreateStatic(waMoteur, sizeof(waMoteur), NORMALPRIO+2, Moteur, NULL);  //creation of the Moteur thread 
-}
-
-void wait_accelerometre_mesure(void)
-{
-	chBSemWait(&accelerometre_mesure_sem);  //wait until the semaphore is free
 }
 
 int16_t mm_to_step(int16_t value_mm){
