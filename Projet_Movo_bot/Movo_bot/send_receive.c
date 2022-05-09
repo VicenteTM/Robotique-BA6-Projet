@@ -126,5 +126,5 @@ uint16_t get_command(void)
 
 void start_command_send_receive(void)
 {
-    chThdCreateStatic(waSendReceiveCommand, sizeof(waSendReceiveCommand), NORMALPRIO, SendReceiveCommand, NULL);	//creation of the SendReceive thread 
+    chThdCreateStatic(waSendReceiveCommand, sizeof(waSendReceiveCommand), NORMALPRIO+3, SendReceiveCommand, NULL);	//creation of the SendReceive thread 
 }

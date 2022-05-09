@@ -75,7 +75,7 @@ void start_accelerometre(void)
     imu_start();    //inits the IMU
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO, Accelerometre, NULL); //creation of the Accelerometre thread
+    chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO+1, Accelerometre, NULL); //creation of the Accelerometre thread
     chThdSleepMilliseconds(2000);    //waits two secondes to make sure the epuck is stable
 }
 
