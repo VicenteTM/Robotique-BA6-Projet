@@ -7,12 +7,11 @@
 #include "memory_protection.h"
 #include <usbcfg.h>
 #include <main.h>
+//#include <arm_math.h>
 //#include <chprintf.h>
 #include <motors.h>
 #include <sensors/proximity.h>
 //#include <msgbus/messagebus.h>
-#include <i2c_bus.h>
-#include <sensors/imu.h>
 
 #include <send_receive.h>
 #include <moteur.h>
@@ -36,17 +35,15 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-    i2c_start();    //inits the I2C bus
-    imu_start();    //inits the IMU   
     serial_start();   //starts the serial communication
     usb_start();     //starts the USB communication
     start_accelerometre();  //inits the Accelerometre thread
     proximity_start();  //inits the proximity sensors
     calibrate_ir();     //calibrate the proximity sensors
-    motors_init();      //inits the motors
-    start_moteur();     //inits the Moteur thread
     start_command_send_receive();   //inits the SendReceive thread
     start_capteur();    //inits the Capteur thread
+    motors_init();      //inits the motors
+    start_moteur();     //inits the Moteur thread
     /* Infinite loop. */
     while (1) 
     {

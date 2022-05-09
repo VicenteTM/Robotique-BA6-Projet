@@ -7,6 +7,9 @@
 #include <capteur.h>
 #include <moteur.h>
 
+#include <i2c_bus.h>
+#include <sensors/imu.h>
+
 messagebus_t bus;           //declaration of the bus used to memorize the imu values
 MUTEX_DECL(bus_lock);       //
 CONDVAR_DECL(bus_condvar);  //
@@ -64,6 +67,8 @@ void start_accelerometre(void)
 {
     /* System init */
     timer11_start();
+    i2c_start();    //inits the I2C bus
+    imu_start();    //inits the IMU
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO, Accelerometre, NULL); //creation of the Accelerometre thread
