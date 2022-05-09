@@ -1,16 +1,25 @@
+# EP2-MOVOBOT
+# Main Movobot program
+# Uses matplotlib as GUI and pyserial for communication
+
+
+# Libraries import
 import sys
 import os
 import matplotlib
 from platform import release
-
-import movobot_lib.communication as communication
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+
+# Project libraries import
+import movobot_lib.communication as communication
 from movobot_lib.robotPlot import Robot, ROBOT_DIAMETER
 from movobot_lib.communication import serial_thread
 from movobot_lib.plotUtilities import goodbye
 
+
+# Saves the calibration of the captors into lists in a python files
 def saveCalibrationCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
         script_foleder = os.path.dirname(os.path.realpath(__file__))
@@ -26,75 +35,108 @@ def saveCalibrationCallback(val):
             doc.write('] \n')
         robot.calibrated = True
 
-def sendAndReceiveCallback(val):
+
+# Button Control and Read callback function
+def controlAndReadCallback(val):
+
+    # Close all other windows
     if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
     elif reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
 
-    reader_thd.setContSendAndReceive()
+    reader_thd.setContControlAndRead()  # Set the state
 
-def stop_readingCallback(val):
-    if reader_thd.commun_state == communication.DCCALIBRATION:
-        plt.close(fig=fig_plotDCaptor)
-    elif reader_thd.commun_state == communication.LIVEIMU:
-        plt.close(fig=fig_plotLiveIMU)
-    reader_thd.stop_reading()
 
+# Button Plot Calibration callback function
 def plotDCCallback(val):
+
+    # Close LiveIMU window 
     if reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
 
+    # Creates window if not opened // close it otherwise
     if reader_thd.commun_state != communication.DCCALIBRATION:
+
+        # Window definition
         global fig_plotDCaptor
         fig_plotDCaptor, ax_plotDCaptor = plt.subplots()
-        fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
-        fig_plotDCaptor.canvas.mpl_connect('key_release_event', release)
-        fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
-        ax_plotDCaptor.set_xlim([0, 50])
-        ax_plotDCaptor.set_ylim([0, 4000])
+        line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
+        
+        # Plot definitions
         plt.title("E-Puck2 distance captor caracteristic")
         plt.xlabel("Distance (in mm)")
         plt.ylabel("Intensity")
+        ax_plotDCaptor.set_xlim([0, 50])
+        ax_plotDCaptor.set_ylim([0, 4000])
 
-        
+        # Config of the button
         colorAx             = 'lightgoldenrodyellow'
         saveCalibrationAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_plotDCaptor)
         saveCalibrationButton    = Button(saveCalibrationAx, 'Save', color=colorAx, hovercolor='0.975')
-        saveCalibrationButton.on_clicked(saveCalibrationCallback)
 
-        line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
-        reader_thd.setContReceiveCaptorD(line_capt_d)
-        plt.show()
+        # Connect User interactions
+        fig_plotDCaptor.canvas.mpl_connect('key_press_event', on_press)
+        fig_plotDCaptor.canvas.mpl_connect('key_release_event', release)
+        fig_plotDCaptor.canvas.mpl_connect('close_event', handle_close_plotDC) #to detect when the window is closed and if we do a ctrl-c
+        saveCalibrationButton.on_clicked(saveCalibrationCallback)
         fig_plotDCaptor._my_btn = saveCalibrationButton
-    else:
+
+        reader_thd.setContReceiveCaptorD(line_capt_d)  # Set the state
+
+        plt.show()
+    else:   # Re-click --> close window
         plt.close(fig=fig_plotDCaptor)
-        reader_thd.stop_reading()
+        reader_thd.stop_reading()   # Set the state
 
         
+# Button Plot LiveIMU callback function
 def plotLiveIMUCallback(val):
+
+    # Close Calibration window 
     if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
-
+        
+    # Creates window if not opened // close it otherwise
     if reader_thd.commun_state != communication.LIVEIMU:
+
+        # Window definition
         global fig_plotLiveIMU
         fig_plotLiveIMU, ax_plotLiveIMU = plt.subplots()
-        fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
-        fig_plotLiveIMU.canvas.mpl_connect('key_release_event', release)
-        fig_plotLiveIMU.canvas.mpl_connect('close_event', handle_close_plotLIMU) #to detect when the window is closed and if we do a ctrl-c
+        line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
+
+        # Plot definitions
         ax_plotLiveIMU.set_xlim([0, 50])
         ax_plotLiveIMU.set_ylim([-20, 20])
-        line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
         plt.title("Live IMU")
         plt.xlabel("Live Time")
         plt.ylabel("Intensity")
-        reader_thd.setContLiveIMU(line_live_IMU)
+
+        # Connect User interactions
+        fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
+        fig_plotLiveIMU.canvas.mpl_connect('key_release_event', release)
+        fig_plotLiveIMU.canvas.mpl_connect('close_event', handle_close_plotLIMU) #to detect when the window is closed and if we do a ctrl-c
+
+        reader_thd.setContLiveIMU(line_live_IMU)  # Set the state
+
         plt.show()
-    else:
+    else:   # Re-click --> close window
         plt.close(fig=fig_plotLiveIMU)
-        reader_thd.setContSendAndReceive()
+        reader_thd.setContControlAndRead()   # Set the state
 
 
+# Button Stop callback function
+def stop_readingCallback(val):
+    # Close all windows but principal window
+    if reader_thd.commun_state == communication.DCCALIBRATION:
+        plt.close(fig=fig_plotDCaptor)
+    elif reader_thd.commun_state == communication.LIVEIMU:
+        plt.close(fig=fig_plotLiveIMU)
+
+    reader_thd.stop_reading()  # Set the state
+
+
+# Key event on press callback
 def on_press(event):
     if event.key == 'up':
         robot.command = communication.FORWARD
@@ -108,6 +150,7 @@ def on_press(event):
         robot.command = communication.NEUTRAL
 
 
+# Key event on release callback
 def release(event):
     if event.key == 'up':
         robot.command = communication.NEUTRAL
@@ -119,28 +162,37 @@ def release(event):
         robot.command = communication.NEUTRAL
 
 
-#handler when closing the window
+# Handler when closing the principal window
 def handle_close(evt):
-    # we stop the serial thread
+
+    # Close all windows 
     if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
     if reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
+
+    # Stop the serial thread
     reader_thd.stop()
     print(goodbye)
 
+
+# Handler when closing the calibration window
 def handle_close_plotDC(evt):
     if reader_thd.commun_state == communication.DCCALIBRATION:
         plt.close(fig=fig_plotDCaptor)
-        reader_thd.stop_reading()
 
+        reader_thd.stop_reading()   # Set the state
+
+
+# Handler when closing the LiveIMU window
 def handle_close_plotLIMU(evt):
     if reader_thd.commun_state == communication.LIVEIMU:
         plt.close(fig=fig_plotLiveIMU)
-        reader_thd.setContSendAndReceive()
+
+        reader_thd.setContControlAndRead() # Set the state
 
 
-#update the plots
+# Update the plots periodicaly
 def update_plot():
     if(reader_thd.need_to_update_plot()):
         fig_r.canvas.draw_idle()
@@ -151,66 +203,65 @@ def update_plot():
         fig_plotLiveIMU.canvas.draw() 
     
 
-#reset the sinus plot
+#reset the robot position and clear captor drawing on the plot
 def reset(event):
     robot.reset()
 
 
+# Main window creation
 def plotMovobot(fig_r, ax_r):
 
-    plt.title("E-Puck2 position")
-    plt.xlabel("X (in mm)")
-    plt.ylabel("Y (in mm)")
-    
-    plt.grid(color = 'green', linestyle = '--', linewidth = 0.5)
-    fig_r.canvas.mpl_connect('key_press_event', on_press)
-    fig_r.canvas.mpl_connect('key_release_event', release)
-    fig_r.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
+    # Window definition
     mng = plt.get_current_fig_manager()
     mng.window.resizable(False, False)
     mng.window.wm_geometry("+0+0")
+    ax_r.set_aspect('equal', adjustable='box')
 
-    #timer to update the plot from within the state machine of matplotlib
-    #because matplotlib is not thread safe...
+    # Plot definitions
+    sizefromrobot = 5 * ROBOT_DIAMETER
+    ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
+    ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])
+    plt.title("E-Puck2 position")
+    plt.xlabel("X (in mm)")
+    plt.ylabel("Y (in mm)")
+    plt.grid(color = 'green', linestyle = '--', linewidth = 0.5)
+
+    # Timer to update the plot from within the state machine of matplotlib
+    # Because matplotlib is not thread safe...
     timer = fig_r.canvas.new_timer(interval=50)
     timer.add_callback(update_plot)
     timer.start()
 
-
-    #positions of the buttons, sliders and radio buttons
+    # Positions of the buttons, sliders and radio buttons
     colorAx             = 'lightgoldenrodyellow'
-    resetAx             = plt.axes([0.8, 0.02, 0.1, 0.04],figure=fig_r)
-    sendAndReceiveAx    = plt.axes([0.1, 0.02, 0.15, 0.04],figure=fig_r)
-    plotCaptorDistAx    = plt.axes([0.25, 0.02, 0.1, 0.04],figure=fig_r)
-    plotLiveIMUAx       = plt.axes([0.35, 0.02, 0.1, 0.04],figure=fig_r)
-    stopAx              = plt.axes([0.45, 0.02, 0.1, 0.04],figure=fig_r)
+    resetAx             = plt.axes([0.8 , 0.01, 0.1, 0.04] ,figure=fig_r)
+    sendAndReceiveAx    = plt.axes([0.1 , 0.01, 0.15, 0.04],figure=fig_r)
+    plotCaptorDistAx    = plt.axes([0.25, 0.01, 0.1, 0.04] ,figure=fig_r)
+    plotLiveIMUAx       = plt.axes([0.35, 0.01, 0.1, 0.04] ,figure=fig_r)
+    stopAx              = plt.axes([0.45, 0.01, 0.1, 0.04] ,figure=fig_r)
 
-    #config of the buttons, sliders and radio buttons
+    # Config of the buttons
     resetButton             = Button(resetAx, 'Reset Plot', color=colorAx, hovercolor='0.975')
     sendAndReceiveButton    = Button(sendAndReceiveAx, 'Control and read', color=colorAx, hovercolor='0.975')
     captorDistButton        = Button(plotCaptorDistAx, 'Calib Dist Captor', color=colorAx, hovercolor='0.975')
     captorLIMUButton        = Button(plotLiveIMUAx, 'Live IMU', color=colorAx, hovercolor='0.975')
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
-    ax_r.set_aspect('equal', adjustable='box')
-
+    # Connect User interactions
     resetButton.on_clicked(reset)
-    sendAndReceiveButton.on_clicked(sendAndReceiveCallback)
+    sendAndReceiveButton.on_clicked(controlAndReadCallback)
     captorDistButton.on_clicked(plotDCCallback)
     captorLIMUButton.on_clicked(plotLiveIMUCallback)
     stop.on_clicked(stop_readingCallback)
-
-    
-    sizefromrobot = 5 * ROBOT_DIAMETER
-
-    ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
-    ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])
+    fig_r.canvas.mpl_connect('key_press_event', on_press)
+    fig_r.canvas.mpl_connect('key_release_event', release)
+    fig_r.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
 
     plt.show()
 
 
 def main():
-    # #test if the serial port as been given as argument in the terminal
+    # Test if the serial port as been given as argument in the terminal or in text file
     if not len(sys.argv) == 1:
         port = sys.argv[1]
     else:
@@ -223,15 +274,17 @@ def main():
             print('Please give the serial port to use as argument')
             sys.exit(0)
 
+    # Principal window plot declaration
     global fig_r
     fig_r, ax_r = plt.subplots(figsize=(15.36, 7.624))
 
+    # Robot instance declaration
     global robot
     robot = Robot(fig_r, ax_r)
     robot.command = communication.NEUTRAL
 
-    # #serial reader thread config
-    # #begins the serial thread
+    # Serial reader thread config
+    # Begins the serial thread
     global reader_thd
     reader_thd = serial_thread(port , robot)
     reader_thd.start()

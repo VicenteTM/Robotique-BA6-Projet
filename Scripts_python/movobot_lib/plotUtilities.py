@@ -1,3 +1,6 @@
+# EP2-MOVOBOT
+# Console output at exit art
+
 goodbye="""  
  ____                                                      
 /\  _`\                                                    
