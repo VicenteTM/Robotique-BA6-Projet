@@ -96,8 +96,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved 10mm
                     {
-                        left_motor_set_speed(mm_to_step(SPEED) - speed_correction_value());    //the left wheel will move the same distance as the right one
-                        right_motor_set_speed(mm_to_step(SPEED) + speed_correction_value());
+                        left_motor_set_speed(mm_to_step(SPEED) + pi_regulator(GOAL_DISTANCE));    //the left wheel will move the same distance as the right one
+                        right_motor_set_speed(mm_to_step(SPEED) - pi_regulator(GOAL_DISTANCE));
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
@@ -114,8 +114,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()>(pos_r_av-mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved -10mm
                     {
-                        left_motor_set_speed(-mm_to_step(SPEED) + speed_correction_value());
-                        right_motor_set_speed(-mm_to_step(SPEED) - speed_correction_value());
+                        left_motor_set_speed(-mm_to_step(SPEED) +1);
+                        right_motor_set_speed(-mm_to_step(SPEED) -1);
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
@@ -270,7 +270,7 @@ int16_t step_to_mm(int16_t value_step){
 
 void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu){
     static uint16_t data[12];   //array we send to the computer
-    wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
+    //wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
     data[0] = coord_x;                       //put the values we want to send to the computer in the data array
     data[1] = coord_y;                       //
     data[2] = direction;                        //
@@ -292,14 +292,43 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu){
         SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);  //send the data to the computer
 
 }
-int16_t speed_correction_value(void){
-	int16_t speed_correction=0;
-    if (get_capteur_values_to_send()[4]>700)
-        speed_correction = SPEED_CORRECTION;
-    else 
-    {
-        if (get_capteur_values_to_send()[5]>700)
-            speed_correction = -SPEED_CORRECTION;
-    }
-    return speed_correction;
+int16_t pi_regulator(int goal){
+	int distance = 0;
+	if (get_capteur_values_to_send()[5]==0){
+		distance = get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4]+200;
+		if (get_capteur_values_to_send()[4]==0)
+			distance = get_capteur_values_to_send()[3]-get_capteur_values_to_send()[5]+200;
+		else
+			distance = get_capteur_values_to_send()[5]-get_capteur_values_to_send()[4];
+	}
+	else
+		distance = get_capteur_values_to_send()[3]+get_capteur_values_to_send()[5]-get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4];
+
+    int error = 0;
+	int speed = 0;
+
+	static int sum_error = 0;
+
+	error = distance - goal;
+
+	//disables the PI regulator if the error is to small
+	//this avoids to always move as we cannot exactly be where we want and 
+	//the camera is a bit noisy
+	if(fabs(error) < ERROR_THRESHOLD){
+		return 0;
+	}
+
+	sum_error += error;
+
+	//we set a maximum and a minimum for the sum to avoid an uncontrolled growth
+	if(sum_error > MAX_SUM_ERROR){
+		sum_error = MAX_SUM_ERROR;
+	}else if(sum_error < -MAX_SUM_ERROR){
+		sum_error = -MAX_SUM_ERROR;
+	}
+
+	speed = (KP * error)/2;
+
+    return (int16_t)speed;
 }
+

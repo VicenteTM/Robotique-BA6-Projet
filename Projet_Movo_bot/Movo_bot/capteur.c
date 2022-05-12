@@ -49,7 +49,7 @@ void calibrate(void){
 
 void start_capteur(void)
 {
-    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+1, Capteur, NULL); //creation of the Capteur thread    
+    chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+2, Capteur, NULL); //creation of the Capteur thread
 }
 
 void wait_capteur_received(void){
