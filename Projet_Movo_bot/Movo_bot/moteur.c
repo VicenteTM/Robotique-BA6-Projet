@@ -43,7 +43,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     calibration_done = false;
                     break;
                 case CONTROLANDREAD:
-                	//send_accelerometre_mesure();    //free the semaphore accelerometre_mesure to check if there has been an impact
+                	wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
                     stop_command = false;
                     calibration_done = false;
                     break;
@@ -68,7 +68,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     break;
                 case LIVEIMU:
-                	//send_accelerometre_mesure();     //free the semaphore accelerometre_mesure to plot the acceleration with time
+                	wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
                     calibration_done = false;
                     imu = true;     //we are going to use the imu
                     stop_command = false;   //when we plot the live IMU, the commands are still active

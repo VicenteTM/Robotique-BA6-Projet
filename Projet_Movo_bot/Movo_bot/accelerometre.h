@@ -7,7 +7,6 @@ void start_accelerometre(void);
 float get_acceleration_y(void);
 void get_gravity(imu_msg_t *imu_values);
 void wait_accelerometre_mesure(void);
-void send_accelerometre_mesure(void);
 uint8_t get_impact(void);
 void reset_impact(void);
 

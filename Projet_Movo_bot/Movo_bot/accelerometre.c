@@ -56,7 +56,8 @@ static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure 
     	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // attend que des nouvelles valeurs de l'imu soient publiees
     	get_gravity(&imu_values);   //recupere la valeur de l'acceleration en y
     	if(acceleration_y>THRESHOLD)
-    	    	impact = true;
+    	    impact = true;
+        chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to check if there has been an impact
     }
 }
 
@@ -99,7 +100,3 @@ void wait_accelerometre_mesure(void)
 	chBSemWait(&accelerometre_mesure_sem);  //wait until the semaphore is free
 }
 
-void send_accelerometre_mesure(void)
-{
-	chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to check if there has been an impact
-}
