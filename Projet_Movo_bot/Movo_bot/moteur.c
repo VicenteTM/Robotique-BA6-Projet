@@ -96,8 +96,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved 10mm
                     {
-                        left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
-                        right_motor_set_speed(mm_to_step(SPEED));
+                        left_motor_set_speed(mm_to_step(SPEED) - speed_correction_value());    //the left wheel will move the same distance as the right one
+                        right_motor_set_speed(mm_to_step(SPEED) + speed_correction_value());
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
@@ -114,8 +114,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()>(pos_r_av-mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved -10mm
                     {
-                        left_motor_set_speed(-mm_to_step(SPEED));
-                        right_motor_set_speed(-mm_to_step(SPEED));
+                        left_motor_set_speed(-mm_to_step(SPEED) + speed_correction_value());
+                        right_motor_set_speed(-mm_to_step(SPEED) - speed_correction_value());
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
@@ -292,15 +292,14 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu){
         SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);  //send the data to the computer
 
 }
-
-
-        // speed_correction = (get_capteur_values_to_send()[4]-get_capteur_values_to_send()[5])/(pos_av_r-pos_av_l);
-
-        // //if the line is nearly in front of the camera, don't rotate
-        // if(abs(speed_correction) < ROTATION_THRESHOLD){
-        // 	speed_correction = 0;
-        // }
-
-        // //applies the speed from the PI regulator and the correction for the rotation
-		// right_motor_set_speed(speed - ROTATION_COEFF * speed_correction);
-		// left_motor_set_speed(speed + ROTATION_COEFF * speed_correction);
+int16_t speed_correction_value(void){
+	int16_t speed_correction=0;
+    if (get_capteur_values_to_send()[4]>700)
+        speed_correction = SPEED_CORRECTION;
+    else 
+    {
+        if (get_capteur_values_to_send()[5]>700)
+            speed_correction = -SPEED_CORRECTION;
+    }
+    return speed_correction;
+}

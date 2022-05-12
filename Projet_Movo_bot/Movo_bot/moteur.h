@@ -9,6 +9,7 @@ uint16_t set_y(uint16_t distance,uint16_t direction);
 int16_t mm_to_step(int16_t value_mm);
 int16_t step_to_mm(int16_t value_step);
 void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu);
+int16_t speed_correction_value(void);
 
 //various values needed for the motor thread
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
@@ -18,6 +19,7 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu);
 #define SPEED       80     // [mm/s]
 #define DISTANCE_ONE    45 // distance to move 1cm [mm]
 #define THRESHOLD		1.0f    //for the acceleration value
+#define SPEED_CORRECTION 5 // [mm/s]
 //values of the 6 commands
 #define NEUTRE 0
 #define FORWARD 1
