@@ -12,6 +12,8 @@
 
 enum {X,Y,M_X,M_Y};     //enum of the 4 directions in anti-clockwise order to indicate to the computer the robot's direction and to calculate the coordinates
 
+static int16_t coord_x_av;     //used to memorize the previous value of the x coordinate
+static int16_t coord_y_av;     //used to memorize the previous value of the y coordinate
 
 //thread
 static THD_WORKING_AREA(waMoteur, 1024);
@@ -28,11 +30,10 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
     uint16_t imu=false;         //variable indicating if we are using the imu
     int16_t pos_l_av=0;         //used to memorize the previous value of the left motor
     int16_t pos_r_av=0;         //used to memorize the previous value of the right motor
-    int16_t coord_x_av = 0;     //used to memorize the previous value of the x coordinate
-    int16_t coord_y_av = 0;     //used to memorize the previous value of the y coordinate
     static int direction=X;     //used to memorize the present direction of the robot
     int distance=0;             //used to memorize the distance the robot has moved after a command
-    static uint16_t data[12];   //array we send to the computer
+    coord_x_av = 0;
+    coord_y_av = 0;
 	while(1)
     {
         wait_send_to_epuck();       //wait for a signal from send_receive that the robot received an instruction
@@ -49,22 +50,23 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     break;
                 case CALIBRATION:
                     if (!calibration_done){
-                    while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50 mm
-                        {
-                        left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
-                        right_motor_set_speed(-mm_to_step(SPEED)/2);
-                        calibrate();    //get the intensity of the two front proximity sensors
-                        data[0] = compteur; //x value to plot on the graph corresponding to the distance the robot has moved
-                        data[1] = (get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;   //y value to plot corresponding to the average intensity of the 2 front proximity sensors
-                        SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 2);   //send the 2 values to the computer
-                        compteur++;
-                        }
-                    left_motor_set_speed(0);    //stop the motors when calibration is done
-                    right_motor_set_speed(0);
-                    distance=0;     //make sure the robot doesn't get wrong coordinates
-                    compteur=0;     //reset variable
-                    stop_command=true;  //we did not get any command
-                    calibration_done = true;
+                        uint16_t data_calibration[2];   //array we send to the computer
+						while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50 mm
+							{
+							left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
+							right_motor_set_speed(-mm_to_step(SPEED)/2);
+							calibrate();    //get the intensity of the two front proximity sensors
+							data_calibration[0] = compteur; //x value to plot on the graph corresponding to the distance the robot has moved
+							data_calibration[1] = (get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;   //y value to plot corresponding to the average intensity of the 2 front proximity sensors
+							SendUint16ToComputer((BaseSequentialStream *) &SD3, data_calibration, 2);   //send the 2 values to the computer
+							compteur++;
+							}
+						left_motor_set_speed(0);    //stop the motors when calibration is done
+						right_motor_set_speed(0);
+						distance=0;     //make sure the robot doesn't get wrong coordinates
+						compteur=0;     //reset variable
+						stop_command=true;  //we did not get any command
+						calibration_done = true;
                     }
                     break;
                 case LIVEIMU:
@@ -90,43 +92,55 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
             switch(command)         //treat the command sent by the computer
             {
                 case FORWARD:   //move 10mm forward
+                    direction=set_direction(FORWARD,direction);
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved 10mm
                     {
                         left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
                         right_motor_set_speed(mm_to_step(SPEED));
+                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                        distance = step_to_mm(distance);    //convert distance in mm
+                        coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+                        coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
+                        send_data(coord_x_av,coord_y_av,direction,imu);
                     }
                     //left_motor_set_speed(0); Plus de précision?
                     //right_motor_set_speed(0);                    
                     distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
-                    direction=set_direction(FORWARD,direction);
                     send = true;        //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case BACKWARD:  //move 10mm backward
+                    direction=set_direction(BACKWARD,direction);
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()>(pos_r_av-mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved -10mm
                     {
                         left_motor_set_speed(-mm_to_step(SPEED));
                         right_motor_set_speed(-mm_to_step(SPEED));
+                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                        distance = step_to_mm(distance);    //convert distance in mm
+                        coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+                        coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
+                        send_data(coord_x_av,coord_y_av,direction,imu);
                     }
                     distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
-                    direction=set_direction(BACKWARD,direction);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case LEFT:  //turn 90 degrees to the left
+                    direction=set_direction(LEFT,direction);
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_QUARTER)))     //for the same wheel, we wait until it has turned 90 degrees
                     {
                     left_motor_set_speed(-mm_to_step(SPEED));   //if the right wheel is moving forward, the left one must move backward in order to turn
-                    right_motor_set_speed(mm_to_step(SPEED));
+                    right_motor_set_speed(mm_to_step(SPEED)); 
                     }
                     left_motor_set_speed(0);
                     right_motor_set_speed(0);
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
-                    direction=set_direction(LEFT,direction);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case RIGHT:     //turn 90 degrees to the right
+                    direction=set_direction(RIGHT,direction); 
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates                                   
                     pos_l_av=left_motor_get_pos();      //memorize the position of one wheel to calculate the distance
                     while (left_motor_get_pos()<(pos_l_av+mm_to_step(NB_COUNTER_QUARTER)))  //for the same wheel, we wait until it has turned 90 degrees
                     {
@@ -135,8 +149,6 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);
                     right_motor_set_speed(0);
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
-                    direction=set_direction(RIGHT,direction);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case NEUTRE:    //the robot stops
@@ -146,6 +158,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case TURNAROUND:    //in case of impact, turn 180 degrees
+                    direction=set_direction(TURNAROUND,direction); 
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates                 
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_HALF)))    //for the same wheel, we wait until it has turned 180 degrees
                     {
@@ -154,39 +168,14 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);
                     right_motor_set_speed(0);
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
-                    direction=set_direction(TURNAROUND,direction);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     reset_impact();
                     break;
             }
-            if (send)
-            {
-                wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
-                distance = step_to_mm(distance);    //convert distance in mm
-                coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
-                coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
-                data[0] = coord_x_av;                       //put the values we want to send to the computer in the data array
-                data[1] = coord_y_av;                       //
-                data[2] = direction;                        //
-                data[3] = get_capteur_values_to_send()[0];  //
-                data[4] = get_capteur_values_to_send()[1];  //
-                data[5] = get_capteur_values_to_send()[2];  //
-                data[6] = get_capteur_values_to_send()[3];  //
-                data[7] = get_capteur_values_to_send()[4];  //
-                data[8] = get_capteur_values_to_send()[5];  //
-                data[9] = get_capteur_values_to_send()[6];  //
-                data[10] = get_capteur_values_to_send()[7]; //
-                if (imu)    //if we are using the imu
-                {
-                    data[11]= get_acceleration_y()*10;                                 //send the data including the acceleration in y direction
-                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 12);  //
-                    imu = false;    //reset variable
-                }
-                else
-                    SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);  //send the data to the computer
-                send = false;   //reset variable
-            }
+            distance = step_to_mm(distance);    //convert distance in mm
+            coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+            coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
+            send_data(coord_x_av,coord_y_av,direction,imu);
         }
     }
 }
@@ -278,3 +267,40 @@ int16_t step_to_mm(int16_t value_step){
     value_mm=floor(value + 0.5);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     return value_mm;
 }
+
+void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu){
+    static uint16_t data[12];   //array we send to the computer
+    wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
+    data[0] = coord_x;                       //put the values we want to send to the computer in the data array
+    data[1] = coord_y;                       //
+    data[2] = direction;                        //
+    data[3] = get_capteur_values_to_send()[0];  //
+    data[4] = get_capteur_values_to_send()[1];  //
+    data[5] = get_capteur_values_to_send()[2];  //
+    data[6] = get_capteur_values_to_send()[3];  //
+    data[7] = get_capteur_values_to_send()[4];  //
+    data[8] = get_capteur_values_to_send()[5];  //
+    data[9] = get_capteur_values_to_send()[6];  //
+    data[10] = get_capteur_values_to_send()[7]; //
+    if (imu)    //if we are using the imu
+    {
+        data[11]= get_acceleration_y()*10;                                 //send the data including the acceleration in y direction
+        SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 12);  //
+        imu = false;    //reset variable
+    }
+    else
+        SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);  //send the data to the computer
+
+}
+
+
+        // speed_correction = (get_capteur_values_to_send()[4]-get_capteur_values_to_send()[5])/(pos_av_r-pos_av_l);
+
+        // //if the line is nearly in front of the camera, don't rotate
+        // if(abs(speed_correction) < ROTATION_THRESHOLD){
+        // 	speed_correction = 0;
+        // }
+
+        // //applies the speed from the PI regulator and the correction for the rotation
+		// right_motor_set_speed(speed - ROTATION_COEFF * speed_correction);
+		// left_motor_set_speed(speed + ROTATION_COEFF * speed_correction);
