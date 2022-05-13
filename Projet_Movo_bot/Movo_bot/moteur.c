@@ -94,11 +94,12 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 case FORWARD:   //move 10mm forward
                     direction=set_direction(FORWARD,direction);
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    pos_l_av=left_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved 10mm
                     {
-                        left_motor_set_speed(mm_to_step(SPEED) + pi_regulator(GOAL_DISTANCE));    //the left wheel will move the same distance as the right one
-                        right_motor_set_speed(mm_to_step(SPEED) - pi_regulator(GOAL_DISTANCE));
-                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                        left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
+                        right_motor_set_speed(mm_to_step(SPEED));
+                        distance = (left_motor_get_pos() + right_motor_get_pos())/2 - (pos_r_av+pos_l_av)/2;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
                         coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
@@ -106,7 +107,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     //left_motor_set_speed(0); Plus de précision?
                     //right_motor_set_speed(0);                    
-                    distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                    distance = (left_motor_get_pos() + right_motor_get_pos())/2 - (pos_r_av+pos_l_av)/2;      //calculate the new distance reached by the robot
                     send = true;        //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case BACKWARD:  //move 10mm backward
@@ -295,9 +296,9 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu){
 int16_t pi_regulator(int goal){
 	int distance = 0;
 	if (get_capteur_values_to_send()[5]==0){
-		distance = get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4]+200;
+		distance = get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4]+800;
 		if (get_capteur_values_to_send()[4]==0)
-			distance = get_capteur_values_to_send()[3]-get_capteur_values_to_send()[5]+200;
+			distance = get_capteur_values_to_send()[3]-get_capteur_values_to_send()[5]+800;
 		else
 			distance = get_capteur_values_to_send()[5]-get_capteur_values_to_send()[4];
 	}
@@ -327,7 +328,7 @@ int16_t pi_regulator(int goal){
 		sum_error = -MAX_SUM_ERROR;
 	}
 
-	speed = (KP * error)/2;
+	speed = (KP * error+ KI*sum_error)/4;
 
     return (int16_t)speed;
 }

@@ -17,14 +17,14 @@ int16_t pi_regulator(int goal);
 #define WHEEL_PERIMETER     130 // [mm]
 #define NB_COUNTER_HALF  84 // number of mm for 180 degrees turn of the motor theoretically (pi*D/2) [mm]
 #define NB_COUNTER_QUARTER  42 // number of mm for 90 degrees turn of the motor theoretically (pi*D/4) [mm]
-#define SPEED       80     // [mm/s]
-#define DISTANCE_ONE    45 // distance to move 1cm [mm]
+#define SPEED       40     // [mm/s]
+#define DISTANCE_ONE    10 // distance to move 1cm [mm]
 #define THRESHOLD		1.0f    //for the acceleration value
 #define GOAL_DISTANCE 			200
 #define ERROR_THRESHOLD			50	//[cm] because of the noise of the camera
 #define KP						0.02f
 #define KI 						0.01f	//must not be zero
-#define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
+#define MAX_SUM_ERROR 			2000
 //values of the 6 commands
 #define NEUTRE 0
 #define FORWARD 1
