@@ -17,6 +17,7 @@ int16_t pi_regulator(int goal);
 #define WHEEL_PERIMETER     130 // [mm]
 #define NB_COUNTER_HALF  84 // number of mm for 180 degrees turn of the motor theoretically (pi*D/2) [mm]
 #define NB_COUNTER_QUARTER  42 // number of mm for 90 degrees turn of the motor theoretically (pi*D/4) [mm]
+#define NB_COUNTER_EIGHT  21 // number of mm for 45 degrees turn of the motor theoretically (pi*D/8) [mm]
 #define SPEED       40     // [mm/s]
 #define DISTANCE_ONE    10 // distance to move 1cm [mm]
 #define THRESHOLD		1.0f    //for the acceleration value
@@ -31,7 +32,10 @@ int16_t pi_regulator(int goal);
 #define BACKWARD 2
 #define LEFT 3
 #define RIGHT 4
+#define HALF_LEFT 6
+#define HALF_RIGHT 7
 #define TURNAROUND 5
+
 
 //values of the 4 states
 #define IDLE 0

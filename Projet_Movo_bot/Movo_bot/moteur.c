@@ -26,6 +26,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
     uint16_t stop_command = false; //if set to true, blocks the command reading
     uint16_t calibration_done = false;  //indicates if the calibration has been done (if we do it twice in a row, our graph becomes false)
     uint16_t command;
+    uint16_t last_pos=0;
     uint16_t compteur=0;        //this counter is used to plot the calibration data
     uint16_t imu=false;         //variable indicating if we are using the imu
     int16_t pos_l_av=0;         //used to memorize the previous value of the left motor
@@ -40,15 +41,19 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
             switch(get_state())     //treat the state desired from the computer
             {
                 case IDLE:          //neutral case
+                	imu = false;     //we aren't going to use the imu
                     stop_command = true;
                     calibration_done = false;
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
                     break;
                 case CONTROLANDREAD:
-                	wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
+                	//wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
                     stop_command = false;
                     calibration_done = false;
                     break;
                 case CALIBRATION:
+                	imu = false;     //we aren't going to use the imu
                     if (!calibration_done){
                         uint16_t data_calibration[2];   //array we send to the computer
 						while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50 mm
@@ -70,7 +75,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     break;
                 case LIVEIMU:
-                	wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
+                	//wait_accelerometre_mesure();    //wait until the accelerometer value has been refreshed
                     calibration_done = false;
                     imu = true;     //we are going to use the imu
                     stop_command = false;   //when we plot the live IMU, the commands are still active
@@ -80,11 +85,19 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
         {
             if (get_impact())    //if an impact is detected
             {
-                if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>1000)
+                if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>1300)
                     command = TURNAROUND;   //change the command received by the computed to the emergency protocol
                 else{
-                	command = get_command();
-                	reset_impact();
+                	if (get_capteur_values_to_send()[2]>1000)
+                		command = HALF_LEFT;   //change the command received by the computed to the emergency protocol
+                	else{
+                		if (get_capteur_values_to_send()[3]>1000)
+                    		command = HALF_RIGHT;   //change the command received by the computed to the emergency protocol
+                		else{
+                        	command = get_command();
+                        	reset_impact();
+                		}
+                	}
                 }
             }
             else
@@ -94,29 +107,34 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 case FORWARD:   //move 10mm forward
                     direction=set_direction(FORWARD,direction);
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
-                    pos_l_av=left_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    last_pos=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
+                    right_motor_set_speed(mm_to_step(SPEED));
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved 10mm
                     {
-                        left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
-                        right_motor_set_speed(mm_to_step(SPEED));
-                        distance = (left_motor_get_pos() + right_motor_get_pos())/2 - (pos_r_av+pos_l_av)/2;      //calculate the new distance reached by the robot
+                        distance = right_motor_get_pos()-last_pos;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
-                        coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
-                        coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
-                        send_data(coord_x_av,coord_y_av,direction,imu);
+                        if (distance > 0){
+                            coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+                            coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
+                            send_data(coord_x_av,coord_y_av,direction,imu);
+                            last_pos = right_motor_get_pos();
+                        }
                     }
-                    //left_motor_set_speed(0); Plus de précision?
-                    //right_motor_set_speed(0);                    
-                    distance = (left_motor_get_pos() + right_motor_get_pos())/2 - (pos_r_av+pos_l_av)/2;      //calculate the new distance reached by the robot
+
+                    //left_motor_set_speed(0); //Plus de précision?
+                    //right_motor_set_speed(0);
+                    if (distance>0)
+                    	distance = right_motor_get_pos()-last_pos;      //calculate the new distance reached by the robot
                     send = true;        //the robot has treated the command successfully, we can send the data to the computer
                     break;
                 case BACKWARD:  //move 10mm backward
                     direction=set_direction(BACKWARD,direction);
+                    left_motor_set_speed(-mm_to_step(SPEED));
+                    right_motor_set_speed(-mm_to_step(SPEED));
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()>(pos_r_av-mm_to_step(DISTANCE_ONE)))   //for the same wheel, we wait until it has moved -10mm
                     {
-                        left_motor_set_speed(-mm_to_step(SPEED) +1);
-                        right_motor_set_speed(-mm_to_step(SPEED) -1);
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
@@ -139,6 +157,20 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     right_motor_set_speed(0);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
                     break;
+                case HALF_LEFT:  //turn 45 degrees to the left
+                    direction=set_direction(FORWARD,direction);
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
+                    pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_EIGHT)))     //for the same wheel, we wait until it has turned 90 degrees
+                    {
+                    left_motor_set_speed(-mm_to_step(SPEED));   //if the right wheel is moving forward, the left one must move backward in order to turn
+                    right_motor_set_speed(mm_to_step(SPEED));
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    send = true;   //the robot has treated the command successfully, we can send the data to the computer
+                    reset_impact();
+                    break;
                 case RIGHT:     //turn 90 degrees to the right
                     direction=set_direction(RIGHT,direction); 
                     distance=0;     //the robot has turned on himself, it didn't change coordinates                                   
@@ -151,6 +183,20 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     left_motor_set_speed(0);
                     right_motor_set_speed(0);
                     send = true;   //the robot has treated the command successfully, we can send the data to the computer
+                    break;
+                case HALF_RIGHT:     //turn 45 degrees to the right
+                    direction=set_direction(FORWARD,direction);
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
+                    pos_l_av=left_motor_get_pos();      //memorize the position of one wheel to calculate the distance
+                    while (left_motor_get_pos()<(pos_l_av+mm_to_step(NB_COUNTER_EIGHT)))  //for the same wheel, we wait until it has turned 90 degrees
+                    {
+                        left_motor_set_speed(mm_to_step(SPEED));
+                        right_motor_set_speed(-mm_to_step(SPEED));      //if the left wheel is moving forward, the right one must move backward in order to turn
+                    }
+                    left_motor_set_speed(0);
+                    right_motor_set_speed(0);
+                    send = true;   //the robot has treated the command successfully, we can send the data to the computer
+                    reset_impact();
                     break;
                 case NEUTRE:    //the robot stops
                     left_motor_set_speed(0);
@@ -178,6 +224,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
             coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
             send_data(coord_x_av,coord_y_av,direction,imu);
         }
+       //chThdSleepMilliseconds(100);	 //waits 0.1 second
     }
 }
 
