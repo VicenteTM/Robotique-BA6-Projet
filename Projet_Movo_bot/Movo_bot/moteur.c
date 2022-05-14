@@ -15,7 +15,6 @@ enum {X,Y,M_X,M_Y};     //enum of the 4 directions in anti-clockwise order to in
 //static global
 static int16_t coord_x_av;     //used to memorize the previous value of the x coordinate
 static int16_t coord_y_av;     //used to memorize the previous value of the y coordinate
-
 //thread
 static THD_WORKING_AREA(waMoteur, 1024);
 static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states handling and makes the wheels move accordingly, it also handles the data we send to the computer 
@@ -23,11 +22,11 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-    uint16_t stop_command = false; //if set to true, blocks the command reading
-    uint16_t calibration_done = false;  //indicates if the calibration has been done (if we do it twice in a row, our graph becomes false)
+    uint8_t stop_command = false; //if set to true, blocks the command reading
+    uint8_t calibration_done = false;  //indicates if the calibration has been done (if we do it twice in a row, our graph becomes false)
     uint16_t command;           //value of the command
-    uint16_t compteur=0;        //this counter is used to plot the calibration data
-    uint16_t imu=false;         //variable indicating if we are using the imu
+    uint16_t compteur=0;        //this counter is used to plot the calibration data and to move forward and backward
+    uint8_t imu=false;         //variable indicating if we are using the imu
     int16_t pos_l_av=0;         //used to memorize the previous value of the left motor
     int16_t pos_r_av=0;         //used to memorize the previous value of the right motor
     static int direction=X;     //used to memorize the present direction of the robot
@@ -56,6 +55,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 if (!calibration_done) //in order to avoid a double calibration resulting in false conversion values, we allow only once at a time calibration
                 {
                     uint16_t data_calibration[2];   //array we send to the computer
+                    pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     left_motor_set_speed(-mm_to_step(SPEED)/2); //we go slower to have a better precision
                     right_motor_set_speed(-mm_to_step(SPEED)/2);
                     while (right_motor_get_pos()>(pos_r_av-(5*mm_to_step(DISTANCE_ONE)))) //calibrate on 50 mm
@@ -89,11 +89,11 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 else
                 {
                     if (get_capteur_values_to_send()[2]>1000)
-                        command = HALF_LEFT;   //change the command received by the computed to the emergency protocol
+                        command = ADJUST_LEFT;   //change the command received by the computed to the emergency protocol
                     else
                     {
                         if (get_capteur_values_to_send()[3]>1000)
-                            command = HALF_RIGHT;   //change the command received by the computed to the emergency protocol
+                            command = ADJUST_RIGHT;   //change the command received by the computed to the emergency protocol
                         else
                         {
                             command = get_command();    //an impact can be detected for the bumps on the circuit which must be ignored
@@ -106,46 +106,44 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 command = get_command();    //get the command from the value sent by the computer
             switch(command)         //treat the command sent by the computer
             {
-                case FORWARD:   //move 10mm forward
+                case FORWARD:   //move 20mm forward
                     direction=set_direction(FORWARD,direction);     //set the new direction of the robot
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
                     right_motor_set_speed(mm_to_step(SPEED));
                     compteur = 0;
-                    while (compteur<20)   //for the same wheel, we wait until it has moved 10mm
+                    while (compteur<20)   //for the same wheel, we wait until it has moved 20mm
                     {
-                        distance = (right_motor_get_pos()-pos_r_av)*2;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
+                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
                         distance = step_to_mm(distance);    //convert distance in mm
                         if (distance > 3)   //we send data to the computer every 4mm
                         {
-                            coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
-                            coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
-                            wait_capteur_received();	//wait for the sensors values to be refreshed
+                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate
+                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate
                             send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
                             pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
-                            compteur+=4;	//indicate that the robot has moved 4/2 = 2mm
+                            compteur+=4;	//indicate that the robot has moved 4 mm
                         }
                     }
                     distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                     break;
-                case BACKWARD:  //move 10mm backward
+                case BACKWARD:  //move 20mm backward
                     direction=set_direction(BACKWARD,direction);     //set the new direction of the robot
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     left_motor_set_speed(-mm_to_step(SPEED));	    //the left wheel will move the same distance as the right one
                     right_motor_set_speed(-mm_to_step(SPEED));
                     compteur = 0;
-                    while (compteur<20)   //for the same wheel, we wait until it has moved 10mm
+                    while (compteur<20)   //for the same wheel, we wait until it has moved 20mm
                     {
-                        distance = (right_motor_get_pos()-last_pos)*2;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
+                        distance = right_motor_get_pos() - pos_r_av;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
                         distance = step_to_mm(distance);    //convert distance in mm
                         if (distance < -3)   //we send data to the computer every 4mm
                         {
-                            coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
-                            coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
-                            wait_capteur_received();		//wait for the sensors values to be refreshed
+                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate
+                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate
                             send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
                             pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
-                            compteur+=4;	//indicate that the robot has moved 4/2 = 2mm
+                            compteur+=4;	//indicate that the robot has moved 4mm
                         }
                     }
                     distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
@@ -162,7 +160,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
                     break;
-                case HALF_LEFT:  //turn to the left until the robot is realigned
+                case ADJUST_LEFT:  //turn to the left until the robot is realigned
                     direction=set_direction(FORWARD,direction); 	//no need to change the direction as this command is used to realign the robot
                     distance=0;     //the robot has turned on himself, it didn't change coordinates
                     left_motor_set_speed(-mm_to_step(SPEED)/2);		//if the right wheel is moving forward, the left one must move backward in order to turn
@@ -187,7 +185,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
                     break;
-                case HALF_RIGHT:    //turn to the right until the robot is realigned
+                case ADJUST_RIGHT:    //turn to the right until the robot is realigned
                     direction=set_direction(FORWARD,direction); //no need to change the direction as this command is used to realign the robot
                     distance=0;     //the robot has turned on himself, it didn't change coordinates
                     left_motor_set_speed(mm_to_step(SPEED)/2);		//if the right wheel is moving forward, the left one must move backward in order to turn
@@ -204,6 +202,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
                     distance=0;
+                    calibration_done = false;
                     break;
                 case TURNAROUND:    //in case of impact, turn 180 degrees
                     direction=set_direction(TURNAROUND,direction);   //set the new direction of the robot
@@ -309,6 +308,7 @@ int16_t mm_to_step(int16_t value_mm)
     value_step=floor(value + 0.5);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     return value_step;
 }
+
 int16_t step_to_mm(int16_t value_step)
 {
     double value;
@@ -326,11 +326,10 @@ int16_t step_to_mm(int16_t value_step)
     return value_mm;
 }
 
-void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu)
+void send_data(int16_t coord_x,int16_t coord_y, int direction, uint8_t imu)
 {
-    int accelerometre=0;
     static uint16_t data[12];   //array we send to the computer
-    //wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
+    wait_capteur_received();    //wait for the Capteur thread to finish measuring the intensities
     data[0] = coord_x;                       	//put the values we want to send to the computer in the data array
     data[1] = coord_y;                       	//
     data[2] = direction;                        //
@@ -351,50 +350,5 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint16_t imu)
     else
         SendUint16ToComputer((BaseSequentialStream *) &SD3, data, 11);  //send the data to the computer
 
-}
-
-int16_t pi_regulator(int goal)
-{
-	int distance = 0;
-	if (get_capteur_values_to_send()[5]==0)
-    {
-		distance = get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4]+800;
-		if (get_capteur_values_to_send()[4]==0)
-			distance = get_capteur_values_to_send()[3]-get_capteur_values_to_send()[5]+800;
-		else
-			distance = get_capteur_values_to_send()[5]-get_capteur_values_to_send()[4];
-	}
-	else
-		distance = get_capteur_values_to_send()[3]+get_capteur_values_to_send()[5]-get_capteur_values_to_send()[2]-get_capteur_values_to_send()[4];
-
-    int error = 0;
-	int speed = 0;
-
-	static int sum_error = 0;
-
-	error = distance - goal;
-
-	//disables the PI regulator if the error is to small
-	//this avoids to always move as we cannot exactly be where we want and 
-	//the camera is a bit noisy
-	if(fabs(error) < ERROR_THRESHOLD)
-    {
-		return 0;
-	}
-
-	sum_error += error;
-
-	//we set a maximum and a minimum for the sum to avoid an uncontrolled growth
-	if(sum_error > MAX_SUM_ERROR)
-    {
-		sum_error = MAX_SUM_ERROR;
-	}else if(sum_error < -MAX_SUM_ERROR)
-    {
-		sum_error = -MAX_SUM_ERROR;
-	}
-
-	speed = (KP * error+ KI*sum_error)/4;
-
-    return (int16_t)speed;
 }
 

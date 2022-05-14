@@ -7,6 +7,7 @@
 #include "memory_protection.h"
 #include <usbcfg.h>
 #include <main.h>
+#include <leds.h>
 //#include <arm_math.h>
 //#include <chprintf.h>
 #include <motors.h>
@@ -38,8 +39,13 @@ int main(void)
     serial_start();   //starts the serial communication
     usb_start();     //starts the USB communication
     start_accelerometre();  //inits the Accelerometre thread
+    set_led(LED1,1);
+	set_led(LED3,1);
+	set_led(LED5,1);
+	set_led(LED7,1);
     proximity_start();  //inits the proximity sensors
     calibrate_ir();     //calibrate the proximity sensors
+    set_front_led(1);
     start_command_send_receive();   //inits the SendReceive thread
     start_capteur();    //inits the Capteur thread
     motors_init();      //inits the motors
