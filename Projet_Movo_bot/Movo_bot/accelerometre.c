@@ -1,7 +1,6 @@
 #include <ch.h>
 #include <hal.h>
 #include <math.h>
-//#include <chprintf.h>
 #include <msgbus/messagebus.h>
 #include <accelerometre.h>
 #include <capteur.h>
@@ -15,8 +14,8 @@ MUTEX_DECL(bus_lock);       //
 CONDVAR_DECL(bus_condvar);  //
 
 //static global
-static float acceleration_y;     //value of the acceleration in the y direction
-static uint8_t impact;
+static float acceleration_y;    //value of the acceleration in the y direction
+static uint8_t impact;          //variable indicating the state of the impact
 
 //semaphore
 static BSEMAPHORE_DECL(accelerometre_mesure_sem, TRUE);   //declaration of the semaphore allowing the thread Accelerometre to get the value of the y acceleration
@@ -52,12 +51,11 @@ static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure 
     impact=false;
      while(1)
     {
-    	//wait_accelerometre_mesure();    //attend que la semaphore soit libre, c'est a� dire que le module moteur ait besoin de la valeur
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // attend que des nouvelles valeurs de l'imu soient publiees
-    	get_gravity(&imu_values);   //recupere la valeur de l'acceleration en y
-    	if(acceleration_y>THRESHOLD)
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // wait for new values of the imu to be published
+    	get_gravity(&imu_values);   //get the value of the y acceleration
+    	if(acceleration_y>THRESHOLD)    //if there has been an impact, the y value exceeds the threshold
     	    impact = true;
-        chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to check if there has been an impact
+        chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to indicate the accelerometer value has been refreshed
     }
 }
 
@@ -68,9 +66,9 @@ void get_gravity(imu_msg_t *imu_values)
 
 }
 
-float get_acceleration_y(void)
+int get_acceleration_y(void)
 {
-	return acceleration_y;  //return the value of the acceleration in the y direction of the robot
+	return acceleration_y*10;  //return the value of the acceleration in the y direction of the robot as int value because we need it to send to the computer (*10 is to see the variations better)
 }
 
 uint8_t get_impact(void)
@@ -87,10 +85,9 @@ void start_accelerometre(void)
 {
     /* System init */
     timer11_start();
-    i2c_start();    //inits the I2C bu(get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;s
+    i2c_start();    //inits the I2C bus
     imu_start();    //inits the IMU
-    /** Inits the Inter Process Communication bus. */
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    messagebus_init(&bus, &bus_lock, &bus_condvar);    //Inits the Inter Process Communication bus
     chThdCreateStatic(waAccelerometre, sizeof(waAccelerometre), NORMALPRIO+1, Accelerometre, NULL); //creation of the Accelerometre thread
     chThdSleepMilliseconds(2000);    //waits two secondes to make sure the epuck is stable
 }

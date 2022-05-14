@@ -21,18 +21,19 @@ static THD_FUNCTION(Capteur, arg)      //this thread is used to measure the inte
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-  	while(1){
-            wait_send_to_epuck();
-            data_capteur_to_send[0] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
-            data_capteur_to_send[1] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
-            data_capteur_to_send[2] = get_calibrated_prox(FRONT_RIGHT_IR); //get intensity from the front right proximity sensor
-            data_capteur_to_send[3] = get_calibrated_prox(FRONT_LEFT_IR); //get intensity from the front left proximity sensor
-            data_capteur_to_send[4] = get_calibrated_prox(RIGHT_IR); //get intensity from the right proximity sensor
-            data_capteur_to_send[5] = get_calibrated_prox(LEFT_IR); //get intensity from the left proximity sensor
-            data_capteur_to_send[6] = get_calibrated_prox(BACK_RIGHT_IR); //get intensity from the right proximity sensor
-            data_capteur_to_send[7] = get_calibrated_prox(BACK_LEFT_IR); //get intensity from the left proximity sensor
-            chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
-            chThdSleepMilliseconds(100);	 //waits 0.1 second
+  	while(1)
+    {
+        wait_send_to_epuck();      //wait for a signal from send_receive that the robot received an instruction
+        data_capteur_to_send[0] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
+        data_capteur_to_send[1] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
+        data_capteur_to_send[2] = get_calibrated_prox(FRONT_RIGHT_IR); //get intensity from the front right proximity sensor
+        data_capteur_to_send[3] = get_calibrated_prox(FRONT_LEFT_IR); //get intensity from the front left proximity sensor
+        data_capteur_to_send[4] = get_calibrated_prox(RIGHT_IR); //get intensity from the right proximity sensor
+        data_capteur_to_send[5] = get_calibrated_prox(LEFT_IR); //get intensity from the left proximity sensor
+        data_capteur_to_send[6] = get_calibrated_prox(BACK_RIGHT_IR); //get intensity from the right proximity sensor
+        data_capteur_to_send[7] = get_calibrated_prox(BACK_LEFT_IR); //get intensity from the left proximity sensor
+        chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
+        chThdSleepMilliseconds(10);	 //waits 0.01 second
 	}
 }
 
@@ -41,10 +42,10 @@ uint16_t *get_capteur_values_to_send(void)
 	return data_capteur_to_send;    //return the pointer to the array containing the intensity of the proximity sensors
 }
 
-void calibrate(void){
-    data_capteur_to_send[1] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
-    data_capteur_to_send[2] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
-    //chBSemSignal(&capteur_Received_sem);    //free the semaphore to indicate the robot has measured the values
+void calibrate(void)
+{
+    data_capteur_to_send[0] = get_calibrated_prox(FRONT_R_IR); //get intensity from the front front right proximity sensor
+    data_capteur_to_send[1] = get_calibrated_prox(FRONT_L_IR); //get intensity from the front front left proximity sensor
 }
 
 void start_capteur(void)
@@ -52,7 +53,8 @@ void start_capteur(void)
     chThdCreateStatic(waCapteur, sizeof(waCapteur), NORMALPRIO+2, Capteur, NULL); //creation of the Capteur thread
 }
 
-void wait_capteur_received(void){
+void wait_capteur_received(void)
+{
 	chBSemWait(&capteur_Received_sem);  //wait until the semaphore is free
 }
 

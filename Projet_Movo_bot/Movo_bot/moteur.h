@@ -22,7 +22,7 @@ int16_t pi_regulator(int goal);
 #define DISTANCE_ONE    10 // distance to move 1cm [mm]
 #define THRESHOLD		1.0f    //for the acceleration value
 #define GOAL_DISTANCE 			200
-#define ERROR_THRESHOLD			50	//[cm] because of the noise of the camera
+#define ERROR_THRESHOLD			800		// because of the noise of the camera
 #define KP						0.02f
 #define KI 						0.01f	//must not be zero
 #define MAX_SUM_ERROR 			2000
