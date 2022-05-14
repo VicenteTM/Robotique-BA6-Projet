@@ -14,7 +14,7 @@ from matplotlib.widgets import Button
 
 # Project libraries import
 import movobot_lib.communication as communication
-from movobot_lib.robotPlot import Robot, ROBOT_DIAMETER
+from movobot_lib.robotPlot import Robot, ROBOT_DIAMETER, SIZEFROMROBOT
 from movobot_lib.communication import serial_thread
 from movobot_lib.plotUtilities import goodbye
 from movobot_lib.captorsPlot import TIME_BACK_IMU
@@ -24,7 +24,7 @@ from movobot_lib.captorsPlot import TIME_BACK_IMU
 def saveCalibrationCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
         script_foleder = os.path.dirname(os.path.realpath(__file__))
-        with open(script_foleder + '/calibration.py', 'w') as doc:
+        with open(script_foleder + '/calibrations/calibration.py', 'w') as doc:
             doc.write('Distance = [')
             for dist in reader_thd.captorD.dist:
                 doc.write(f'{"%.0f" % dist}, ')
@@ -181,6 +181,7 @@ def handle_close_plotDC(evt):
         plt.close(fig=fig_plotDCaptor)
 
         reader_thd.stop_reading()   # Set the state
+        update_plot()
 
 
 # Handler when closing the LiveIMU window
@@ -217,9 +218,8 @@ def plotMovobot(fig_r, ax_r):
     ax_r.set_aspect('equal', adjustable='box')
 
     # Plot definitions
-    sizefromrobot = 5 * ROBOT_DIAMETER
-    ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
-    ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])
+    ax_r.set_xlim([-SIZEFROMROBOT + robot.position.getx(), SIZEFROMROBOT + robot.position.getx()])
+    ax_r.set_ylim([-SIZEFROMROBOT + robot.position.gety(), SIZEFROMROBOT + robot.position.gety()])
     plt.title("Movobot position and obstacles")
     plt.xlabel("X (in mm)")
     plt.ylabel("Y (in mm)")
@@ -252,7 +252,7 @@ def plotMovobot(fig_r, ax_r):
     stateAx.get_xaxis().set_visible(False)
     stateAx.get_yaxis().set_visible(False)
     state_t = stateAx.text(0,0, 
-                                f'Current state: \n\nIDLE ', style = 'normal', ha = 'center',
+                                f'Current state: \nIDLE \n\nCalibration:\nNot calibrated ', style = 'normal', ha = 'center',
                                 bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
     reader_thd.set_state_t(state_t)
 

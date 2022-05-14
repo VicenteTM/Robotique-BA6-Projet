@@ -83,6 +83,7 @@ Où *comX* et *cu.usbmodemXXXX* est le port auquel l'e-puck2 est connecté par b
 - ### Plot calibration
 
     Il s'agit de calibrer les capteirs de distances. Une calibration par défaut est intégré mais il est **conseillé** de calibré l'e-puck2 à chaque nouvelle utilisation et de licker sur le bouton **Save** pour que cette calibration soit éffective.
+    Pour être dans de bonnes conditions, placer le robot face à un mur de façon à ce qu'il y ait contact. Laisser 5cm de marge à l'arrière du robot pour qu'il puisse réaliser sa manoeuvre. Avoir une luminosité ambiente semblable à celle qui sera présnete pendant l'utilisation effective.
 
 - ### Reset Plot
 

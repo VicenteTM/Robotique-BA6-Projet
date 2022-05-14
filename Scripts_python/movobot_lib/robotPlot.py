@@ -4,7 +4,7 @@
 import math
 import matplotlib.pyplot as plt
 from movobot_lib.mathLib import Vector
-import movobot_lib.default_calibration as default_calibration
+import calibrations.default_calibration as default_calibration
 
 # Robot constants (in mm)
 DISTANCE_CAPTOR_MAX_RANGE = 40
@@ -15,6 +15,8 @@ WHEEL_PERIMETER = WHEEL_DIAMETER * math.pi
 ROBOT_DIAMETER = 70 
 ROBOT_RADIUS = ROBOT_DIAMETER/2 
 STEPS_PER_TURN = 1000
+
+SIZEFROMROBOT = 6 * ROBOT_DIAMETER
 
 # Distance captor class
 class Capteur_dist:
@@ -99,7 +101,7 @@ class Robot:
         self.ax.add_line(self.left_wheel)
 
         # Coordinates
-        self.coord = self.ax.text(5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y, 
+        self.coord = self.ax.text(SIZEFROMROBOT * 1.5 + self.position.x, self.position.y, 
                                 f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
                                 f'\nTheta = {"%.0f" % (self.direction.theta % 360)}', style='italic',
                                 bbox={'facecolor':'blue', 'alpha':0.5, 'pad':10})
@@ -159,14 +161,13 @@ class Robot:
         self.left_wheel.set(xdata = x_left_data, ydata = y_left_data)
 
         # Coordinates
-        self.coord.set_position((5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y))
+        self.coord.set_position((SIZEFROMROBOT * 1.5 + self.position.x, self.position.y))
         self.coord.set_text(f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
                             f'\nTheta = {"%.0f" % (self.direction.theta % 360)}')
         
         # Readjust the ploting limits
-        sizefromrobot = 5 * ROBOT_DIAMETER
-        self.ax.set_xlim([-sizefromrobot + self.position.getx(), sizefromrobot + self.position.getx()])
-        self.ax.set_ylim([-sizefromrobot + self.position.gety(), sizefromrobot + self.position.gety()])
+        self.ax.set_xlim([-SIZEFROMROBOT + self.position.getx(), SIZEFROMROBOT + self.position.getx()])
+        self.ax.set_ylim([-SIZEFROMROBOT + self.position.gety(), SIZEFROMROBOT + self.position.gety()])
 
     # Move the robot of a certain values
     # Unused function at the time
@@ -222,11 +223,11 @@ def convert_intensity_to_mm(intensity, calibrated):
 
     # Use the newest calibration if saved
     try:    # Double check
-        import movobot_lib.calibration as calibration
+        import calibrations.calibration as calibration
         intensity = closest_value(calibration.Intensity, intensity)
         index = calibration.Intensity.index(intensity)
         distance = calibration.Distance[index]
-    except FileNotFoundError:
+    except:
         intensity = closest_value(default_calibration.Intensity, intensity)
         index = default_calibration.Intensity.index(intensity)
         distance = default_calibration.Distance[index]
