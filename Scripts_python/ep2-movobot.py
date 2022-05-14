@@ -7,6 +7,7 @@
 import sys
 import os
 import matplotlib
+from matplotlib.cbook import get_sample_data
 from platform import release
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -263,7 +264,12 @@ def plotMovobot(fig_r, ax_r):
     plotCaptorDistAx    = plt.axes([0.25, 0.01, 0.1, 0.04] ,figure=fig_r)
     plotLiveIMUAx       = plt.axes([0.35, 0.01, 0.1, 0.04] ,figure=fig_r)
     stopAx              = plt.axes([0.45, 0.01, 0.1, 0.04] ,figure=fig_r)
-    stateAx              = plt.axes([0.15, 0.5, 0, 0] ,figure=fig_r)
+    stateAx             = plt.axes([0.15, 0.5, 0, 0] ,figure=fig_r)
+    legendimageAx          = plt.axes([0.675, 0.1, 0.35, 0.35] ,figure=fig_r)
+    superpositionimageAx         = plt.axes([0.85, 0.47, 0.15, 0.15] ,figure=fig_r)
+    stateAx.axis('off')
+    legendimageAx.axis('off')
+    superpositionimageAx.axis('off')
 
     # Config of the buttons
     resetButton             = Button(resetAx, 'Reset Plot', color=colorAx, hovercolor='0.975')
@@ -273,8 +279,6 @@ def plotMovobot(fig_r, ax_r):
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
 
     # Current State Box
-    stateAx.get_xaxis().set_visible(False)
-    stateAx.get_yaxis().set_visible(False)
     state_t = stateAx.text(0,0, 
                                 f'Current state: \nIDLE \n\nCalibration:\nNot calibrated ', style = 'normal', ha = 'center',
                                 bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
@@ -289,6 +293,13 @@ def plotMovobot(fig_r, ax_r):
     fig_r.canvas.mpl_connect('key_press_event', on_press)
     fig_r.canvas.mpl_connect('key_release_event', release)
     fig_r.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
+
+    # Add images
+    script_folder = script_folder_path()
+    legendimage = plt.imread(get_sample_data(script_folder + '/movobot_lib/images/legend.png'))
+    legendimageAx.imshow(legendimage)
+    superpositionimage = plt.imread(get_sample_data(script_folder + '/movobot_lib/images/superposition.png'))
+    superpositionimageAx.imshow(superpositionimage)
 
     plt.show()
 
