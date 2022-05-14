@@ -16,7 +16,7 @@ class CaptorDist():
 
     # Add values in the lists
     def addValues(self,newvalues:list):
-        new_distance = robotPlot.convert_steps_to_mm(newvalues[0])
+        new_distance = int(robotPlot.convert_steps_to_mm(newvalues[0]))
         if new_distance not in self.dist:
             self.dist.append(new_distance)
             self.intensity.append(newvalues[1])
