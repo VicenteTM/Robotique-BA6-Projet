@@ -108,7 +108,7 @@ def plotLiveIMUCallback(val):
 
         # Plot definitions
         ax_plotLiveIMU.set_xlim([TIME_BACK_IMU, 0])
-        ax_plotLiveIMU.set_ylim([-100, 100])
+        ax_plotLiveIMU.set_ylim([-20, 20])
         plt.title("Live IMU")
         plt.xlabel("Time (in seconds)")
         plt.ylabel("Y accelereration (in m/s^2)")
@@ -252,7 +252,7 @@ def plotMovobot(fig_r, ax_r):
     stateAx.get_xaxis().set_visible(False)
     stateAx.get_yaxis().set_visible(False)
     state_t = stateAx.text(0,0, 
-                                f'Current state: \nIDLE ', style = 'normal', ha = 'center',
+                                f'Current state: \n\nIDLE ', style = 'normal', ha = 'center',
                                 bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
     reader_thd.set_state_t(state_t)
 

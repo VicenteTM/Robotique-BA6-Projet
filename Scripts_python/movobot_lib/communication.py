@@ -184,7 +184,7 @@ class serial_thread(Thread):
 
     def liveImuAction(self, received_data):
         self.robot.update_robot_from_reception(received_data[0:len(received_data)-2])
-        self.liveIMU.addValue(received_data[len(received_data)-1])
+        self.liveIMU.addValue(received_data[len(received_data)-1]/10)
 
         time_l, intensity = self.liveIMU.get_values()
         self.line_live_IMU.set_xdata(time_l)
@@ -256,7 +256,7 @@ class serial_thread(Thread):
     
     def update_state_t(self):
         if self.state_t is not None:
-            self.state_t.set_text(f'Current state: \n{get_text_state(self.commun_state)} ')
+            self.state_t.set_text(f'Current state: \n\n{get_text_state(self.commun_state)} ')
 
     # Clean exit of the thread if we need to stop it
     def stop(self):
