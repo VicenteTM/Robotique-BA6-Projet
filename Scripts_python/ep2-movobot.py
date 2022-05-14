@@ -67,7 +67,7 @@ def plotDCCallback(val):
 
         mng = plt.get_current_fig_manager()    
         script_foleder = os.path.dirname(os.path.realpath(__file__))
-        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/ep2.ico') 
+        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico') 
         
         # Plot definitions
         plt.title("E-Puck2 proximity sensor calibration")
@@ -115,7 +115,7 @@ def plotLiveIMUCallback(val):
         
         mng = plt.get_current_fig_manager()    
         script_foleder = os.path.dirname(os.path.realpath(__file__))
-        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/ep2.ico') 
+        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico') 
 
         # Plot definitions
         ax_plotLiveIMU.set_xlim([TIME_BACK_IMU, 0])
@@ -229,7 +229,7 @@ def plotMovobot(fig_r, ax_r):
     ax_r.set_aspect('equal', adjustable='box')
     fig_r.canvas.set_window_title('EP2 Movobot')
     script_foleder = os.path.dirname(os.path.realpath(__file__))
-    mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/ep2.ico')    
+    mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico')    
 
     # Plot definitions
     ax_r.set_xlim([-SIZEFROMROBOT + robot.position.getx(), SIZEFROMROBOT + robot.position.getx()])
