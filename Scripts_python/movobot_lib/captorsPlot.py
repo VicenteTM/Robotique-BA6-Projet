@@ -3,7 +3,10 @@
 #   captors intended for ploting
 
 # Libraries import
+from time import time
 import movobot_lib.robotPlot as robotPlot
+
+TIME_BACK_IMU = -50
 
 # Distance captor calibration class
 class CaptorDist():
@@ -32,19 +35,44 @@ class CaptorDist():
 # LiveIMU Plot class
 class LiveIMU():
     def __init__(self) -> None:
-        self.time_l = list(range(0, 51))
+        self.time_l = []
         self.intensity = []
+        self.previous_t = 0
+        self.current_t = 0
 
     # Add values in the lists
     def addValue(self,newvalue):
-        if len(self.intensity) < 51: # Beginning of the plot
+        if self.time_l == [] or self.time_l[0] > TIME_BACK_IMU: # Beginning of the plot
             self.intensity.append(newvalue)
+            self.adjust_time()
         else: # Move the plot as new values arrive
-            self.intensity = self.intensity[1:51]
             self.intensity.append(newvalue)
+            self.adjust_time()
+            
+            for time_, intensity in zip(self.time_l, self.intensity):
+                if not time_ < TIME_BACK_IMU:
+                    break
+                self.time_l.remove(time_)
+                self.intensity.remove(intensity)
+
     
+    def adjust_time(self):
+        dt = self.get_dt()
+
+        for i in range(len(self.time_l)):
+            self.time_l[i] -=  dt
+        self.time_l.append(0)
+        
+
+    def get_dt(self):
+        self.current_t = time()
+        dt = self.current_t - self.previous_t
+        self.previous_t = self.current_t
+
+        return dt
+
     # Return the lists
     def get_values(self):
-        return self.time_l[0:len(self.intensity)], self.intensity
+        return self.time_l, self.intensity
 
 

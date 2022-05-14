@@ -17,6 +17,7 @@ import movobot_lib.communication as communication
 from movobot_lib.robotPlot import Robot, ROBOT_DIAMETER
 from movobot_lib.communication import serial_thread
 from movobot_lib.plotUtilities import goodbye
+from movobot_lib.captorsPlot import TIME_BACK_IMU
 
 
 # Saves the calibration of the captors into lists in a python files
@@ -64,7 +65,7 @@ def plotDCCallback(val):
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
         
         # Plot definitions
-        plt.title("E-Puck2 distance captor caracteristic")
+        plt.title("E-Puck2 proximity sensor calibration")
         plt.xlabel("Distance (in mm)")
         plt.ylabel("Intensity")
         ax_plotDCaptor.set_xlim([0, 50])
@@ -106,11 +107,11 @@ def plotLiveIMUCallback(val):
         line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
 
         # Plot definitions
-        ax_plotLiveIMU.set_xlim([0, 50])
-        ax_plotLiveIMU.set_ylim([-20, 20])
+        ax_plotLiveIMU.set_xlim([TIME_BACK_IMU, 0])
+        ax_plotLiveIMU.set_ylim([-100, 100])
         plt.title("Live IMU")
-        plt.xlabel("Live Time")
-        plt.ylabel("Intensity")
+        plt.xlabel("Time (in seconds)")
+        plt.ylabel("Y accelereration (in m/s^2)")
 
         # Connect User interactions
         fig_plotLiveIMU.canvas.mpl_connect('key_press_event', on_press)
@@ -146,8 +147,6 @@ def on_press(event):
         robot.command = communication.LEFT
     elif event.key == 'right':
         robot.command = communication.RIGHT
-    elif event.key == ' ':
-        robot.command = communication.NEUTRAL
 
 
 # Key event on release callback
@@ -221,10 +220,11 @@ def plotMovobot(fig_r, ax_r):
     sizefromrobot = 5 * ROBOT_DIAMETER
     ax_r.set_xlim([-sizefromrobot + robot.position.getx(), sizefromrobot + robot.position.getx()])
     ax_r.set_ylim([-sizefromrobot + robot.position.gety(), sizefromrobot + robot.position.gety()])
-    plt.title("E-Puck2 position")
+    plt.title("Movobot position and obstacles")
     plt.xlabel("X (in mm)")
     plt.ylabel("Y (in mm)")
     plt.grid(color = 'green', linestyle = '--', linewidth = 0.5)
+    
 
     # Timer to update the plot from within the state machine of matplotlib
     # Because matplotlib is not thread safe...
@@ -232,13 +232,14 @@ def plotMovobot(fig_r, ax_r):
     timer.add_callback(update_plot)
     timer.start()
 
-    # Positions of the buttons, sliders and radio buttons
+    # Positions of the buttons
     colorAx             = 'lightgoldenrodyellow'
     resetAx             = plt.axes([0.8 , 0.01, 0.1, 0.04] ,figure=fig_r)
     sendAndReceiveAx    = plt.axes([0.1 , 0.01, 0.15, 0.04],figure=fig_r)
     plotCaptorDistAx    = plt.axes([0.25, 0.01, 0.1, 0.04] ,figure=fig_r)
     plotLiveIMUAx       = plt.axes([0.35, 0.01, 0.1, 0.04] ,figure=fig_r)
     stopAx              = plt.axes([0.45, 0.01, 0.1, 0.04] ,figure=fig_r)
+    stateAx              = plt.axes([0.15, 0.5, 0, 0] ,figure=fig_r)
 
     # Config of the buttons
     resetButton             = Button(resetAx, 'Reset Plot', color=colorAx, hovercolor='0.975')
@@ -246,6 +247,14 @@ def plotMovobot(fig_r, ax_r):
     captorDistButton        = Button(plotCaptorDistAx, 'Calib Dist Captor', color=colorAx, hovercolor='0.975')
     captorLIMUButton        = Button(plotLiveIMUAx, 'Live IMU', color=colorAx, hovercolor='0.975')
     stop                    = Button(stopAx, 'Stop', color=colorAx, hovercolor='0.975')
+
+    # Current State Box
+    stateAx.get_xaxis().set_visible(False)
+    stateAx.get_yaxis().set_visible(False)
+    state_t = stateAx.text(0,0, 
+                                f'Current state: \nIDLE ', style = 'normal', ha = 'center',
+                                bbox={'facecolor':'red', 'alpha':0.5, 'pad':10})
+    reader_thd.set_state_t(state_t)
 
     # Connect User interactions
     resetButton.on_clicked(reset)

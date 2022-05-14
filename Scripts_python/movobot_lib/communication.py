@@ -134,6 +134,7 @@ class serial_thread(Thread):
         self.alive = True
         self.need_to_update = False
         self.commun_state = IDLE
+        self.state_t = None
 
         print('Connecting to port {}'.format(port))
         
@@ -210,13 +211,18 @@ class serial_thread(Thread):
     # Set Control and read state and the control of the robot and reception of data
     def setContControlAndRead(self):
         self.commun_state = CONTROLANDREAD
+
+        self.update_state_t()
         
     # Set the Calibration state
     def setContReceiveCaptorD(self, line_capt_d):
         self.commun_state = DCCALIBRATION
+        self.update_state_t()
 
         self.line_capt_d = line_capt_d
         self.captorD = CaptorDist()
+        
+        self.update_state_t()
         
     # Set LiveIMU state and the control of the robot and reception of data
     def setContLiveIMU(self, line_live_IMU):
@@ -224,10 +230,13 @@ class serial_thread(Thread):
 
         self.line_live_IMU = line_live_IMU
         self.liveIMU = LiveIMU()
+        
+        self.update_state_t()
 
     # Disables the continuous reading and sending
     def stop_reading(self):
         self.commun_state = IDLE
+        self.update_state_t()
 
 
     # Tell the plot need to be updated
@@ -241,6 +250,13 @@ class serial_thread(Thread):
     # Tell if the plot need to be updated
     def need_to_update_plot(self):
         return self.need_to_update
+    
+    def set_state_t(self,state_t):
+        self.state_t = state_t
+    
+    def update_state_t(self):
+        if self.state_t is not None:
+            self.state_t.set_text(f'Current state: \n{get_text_state(self.commun_state)} ')
 
     # Clean exit of the thread if we need to stop it
     def stop(self):
@@ -251,3 +267,15 @@ class serial_thread(Thread):
                 self.port.read(self.port.inWaiting())
                 time.sleep(0.01)
             self.port.close()
+
+def get_text_state(state):
+    if state == 0:
+        return 'IDLE'
+    elif state == 1:
+        return 'CONTROL AND READ'
+    elif state == 2:
+        return 'PROXIMITY SENSOR CALIBRATION'
+    elif state == 3:
+        return 'LIVE IMU'
+    else:
+        return 'IDLE'

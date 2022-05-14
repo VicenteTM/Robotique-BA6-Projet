@@ -7,7 +7,7 @@ from movobot_lib.mathLib import Vector
 import movobot_lib.default_calibration as default_calibration
 
 # Robot constants (in mm)
-DISTANCE_CAPTOR_MAX_RANGE = 20
+DISTANCE_CAPTOR_MAX_RANGE = 40
 WHEEL_DIST = 53 
 WHEEL_DIAMETER = 41
 WHEEL_RADIUS = WHEEL_DIAMETER/2 
@@ -100,9 +100,9 @@ class Robot:
 
         # Coordinates
         self.coord = self.ax.text(5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y, 
-                                f'Legends:\n\nX = {"%.0f" % self.position.x} \nY= {"%.0f" % self.position.y}'\
+                                f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
                                 f'\nTheta = {"%.0f" % (self.direction.theta % 360)}', style='italic',
-                                bbox={'facecolor':'white', 'alpha':0.5, 'pad':10})
+                                bbox={'facecolor':'blue', 'alpha':0.5, 'pad':10})
 
     # Position for ploting functions
 
@@ -160,7 +160,7 @@ class Robot:
 
         # Coordinates
         self.coord.set_position((5 * ROBOT_DIAMETER * 1.5 + self.position.x, self.position.y))
-        self.coord.set_text(f'Legend:\nX = {"%.0f" % self.position.x} Y= {"%.0f" % self.position.y}'\
+        self.coord.set_text(f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
                             f'\nTheta = {"%.0f" % (self.direction.theta % 360)}')
         
         # Readjust the ploting limits
