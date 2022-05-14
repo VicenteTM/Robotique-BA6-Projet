@@ -84,16 +84,16 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
         {
             if (get_impact())    //if an impact is detected
             {
-                if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>1300)
-                    command = TURNAROUND;   //change the command received by the computed to the emergency protocol
+                if ((get_capteur_values_to_send()[3]>SENSOR_THRESHOLD) && (get_capteur_values_to_send()[0]<SENSOR_THRESHOLD))   //check if the robot has turned a bit to the right but is not facing a wall
+                    command = ADJUST_RIGHT;   //change the command received by the computed to the emergency protocol
                 else
                 {
-                    if (get_capteur_values_to_send()[2]>1000)
+                    if ((get_capteur_values_to_send()[2]>SENSOR_THRESHOLD) && (get_capteur_values_to_send()[1]<SENSOR_THRESHOLD))   //check if the robot has turned a bit to the left but is not facing a wall
                         command = ADJUST_LEFT;   //change the command received by the computed to the emergency protocol
                     else
                     {
-                        if (get_capteur_values_to_send()[3]>1000)
-                            command = ADJUST_RIGHT;   //change the command received by the computed to the emergency protocol
+                        if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>SENSOR_THRESHOLD) //check if the robot has run into a wall
+                            command = TURNAROUND;   //change the command received by the computed to the emergency protocol
                         else
                         {
                             command = get_command();    //an impact can be detected for the bumps on the circuit which must be ignored
@@ -114,12 +114,12 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     compteur = 0;
                     while (compteur<20)   //for the same wheel, we wait until it has moved 20mm
                     {
-                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
+                        distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot 
                         distance = step_to_mm(distance);    //convert distance in mm
                         if (distance > 3)   //we send data to the computer every 4mm
                         {
-                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate
-                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate
+                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate *2 because the counter is divided by 2
+                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate *2 because the counter is divided by 2
                             send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
                             pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
                             compteur+=4;	//indicate that the robot has moved 4 mm
@@ -135,12 +135,12 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     compteur = 0;
                     while (compteur<20)   //for the same wheel, we wait until it has moved 20mm
                     {
-                        distance = right_motor_get_pos() - pos_r_av;      //calculate the new distance reached by the robot *2 because the counter value of the motor is divided by 2
+                        distance = right_motor_get_pos() - pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
                         if (distance < -3)   //we send data to the computer every 4mm
                         {
-                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate
-                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate
+                            coord_x_av += set_x(2*distance,direction);    //calculate the new x coordinate *2 because the counter is divided by 2
+                            coord_y_av += set_y(2*distance,direction);    //calculate the new Y coordinate *2 because the counter is divided by 2
                             send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
                             pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
                             compteur+=4;	//indicate that the robot has moved 4mm

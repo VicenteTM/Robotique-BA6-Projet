@@ -18,7 +18,8 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint8_t imu);
 #define SPEED       40     // [mm/s]
 #define DISTANCE_ONE    10 // distance to move 1cm [mm]
 #define THRESHOLD		1.0f    //for the acceleration value
-#define ERROR_THRESHOLD			800		// because of the noise of the camera
+#define SENSOR_THRESHOLD	1000	// threshold for the sensors
+#define ERROR_THRESHOLD		800		// threshold for the adjustment error
 
 
 //values of the 8 commands
