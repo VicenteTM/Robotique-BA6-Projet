@@ -19,12 +19,22 @@ from movobot_lib.communication import serial_thread
 from movobot_lib.plotUtilities import goodbye
 from movobot_lib.captorsPlot import TIME_BACK_IMU
 
+def script_folder_path():
+    if getattr(sys, 'frozen', False):
+            script_folder = os.path.dirname(os.path.dirname(sys.executable))
+    elif __file__:
+        script_folder = os.path.dirname(__file__)
+    
+    return script_folder
+
 
 # Saves the calibration of the captors into lists in a python files
 def saveCalibrationCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
-        script_foleder = os.path.dirname(os.path.realpath(__file__))
-        with open(script_foleder + '/calibrations/calibration.py', 'w') as doc:
+        
+        script_folder = script_folder_path()
+        
+        with open(script_folder + '/calibrations/calibration.py', 'w') as doc:
             doc.write('Distance = [')
             for dist in reader_thd.captorD.dist:
                 doc.write(f'{"%.0f" % dist}, ')
@@ -63,12 +73,12 @@ def plotDCCallback(val):
         global fig_plotDCaptor
         fig_plotDCaptor, ax_plotDCaptor = plt.subplots()
         line_capt_d, = ax_plotDCaptor.plot([], [], '-r')
-        fig_plotDCaptor.canvas.set_window_title('EP2 Movobot - Proximity Sensor calibration')
+        mng = plt.get_current_fig_manager()
+        mng.set_window_title('EP2 Movobot - Proximity Sensor calibration')
+    
+        script_folder = script_folder_path()
+        mng.window.wm_iconbitmap(script_folder + '/movobot_lib/images/ep2.ico')
 
-        mng = plt.get_current_fig_manager()    
-        script_foleder = os.path.dirname(os.path.realpath(__file__))
-        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico') 
-        
         # Plot definitions
         plt.title("E-Puck2 proximity sensor calibration")
         plt.xlabel("Distance (in mm)")
@@ -110,12 +120,12 @@ def plotLiveIMUCallback(val):
         global fig_plotLiveIMU
         fig_plotLiveIMU, ax_plotLiveIMU = plt.subplots()
         line_live_IMU, = ax_plotLiveIMU.plot([], [], '-g')
-        fig_plotLiveIMU.canvas.set_window_title('EP2 Movobot - Live IMU')
+        mng = plt.get_current_fig_manager()
+        mng.set_window_title('EP2 Movobot - Live IMU')
 
-        
-        mng = plt.get_current_fig_manager()    
-        script_foleder = os.path.dirname(os.path.realpath(__file__))
-        mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico') 
+            
+        script_folder = script_folder_path()
+        mng.window.wm_iconbitmap(script_folder + '/movobot_lib/images/ep2.ico') 
 
         # Plot definitions
         ax_plotLiveIMU.set_xlim([TIME_BACK_IMU, 0])
@@ -227,9 +237,9 @@ def plotMovobot(fig_r, ax_r):
     mng.window.resizable(False, False)
     mng.window.wm_geometry("+0+0")
     ax_r.set_aspect('equal', adjustable='box')
-    fig_r.canvas.set_window_title('EP2 Movobot')
-    script_foleder = os.path.dirname(os.path.realpath(__file__))
-    mng.window.wm_iconbitmap(script_foleder + '/movobot_lib/images/ep2.ico')    
+    mng.set_window_title('EP2 Movobot')
+    script_folder = script_folder_path()
+    mng.window.wm_iconbitmap(script_folder + '/movobot_lib/images/ep2.ico')    
 
     # Plot definitions
     ax_r.set_xlim([-SIZEFROMROBOT + robot.position.getx(), SIZEFROMROBOT + robot.position.getx()])
