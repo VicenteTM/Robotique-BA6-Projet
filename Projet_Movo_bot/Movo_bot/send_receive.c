@@ -13,7 +13,7 @@ static BSEMAPHORE_DECL(sendToEpuck_sem, TRUE);   //declaration of the semaphore 
 uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint16_t size)
 {
 
-	volatile uint8_t c1, c2;
+	volatile uint8_t c1;
 	volatile uint16_t temp_size = 0;
 
 	uint8_t state = 0;
@@ -69,17 +69,17 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, uint16_t* data, uint
 	}
 
 	c1 = chSequentialStreamGet(in);
-	c2 = chSequentialStreamGet(in);
+	chSequentialStreamGet(in);
 	temp_size = (int16_t)(c1);
 
 
 	if((temp_size/2) == size)
 	{
 		c1 = chSequentialStreamGet(in);
-		c2 = chSequentialStreamGet(in);
+		chSequentialStreamGet(in);
 		data[0] = (int16_t)(c1);
 		c1 = chSequentialStreamGet(in);
-		c2 = chSequentialStreamGet(in);
+		chSequentialStreamGet(in);
 		data[1] = (int16_t)(c1);
 	}
 
