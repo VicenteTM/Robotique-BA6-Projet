@@ -3,8 +3,6 @@
 #include <math.h>
 #include <msgbus/messagebus.h>
 #include <accelerometre.h>
-#include <capteur.h>
-#include <moteur.h>
 
 #include <i2c_bus.h>
 #include <sensors/imu.h>
@@ -14,7 +12,7 @@ MUTEX_DECL(bus_lock);       //
 CONDVAR_DECL(bus_condvar);  //
 
 //static global
-static float acceleration_y;    //value of the acceleration in the y direction
+static int16_t acceleration_y;    //value of the acceleration in the y direction
 static uint8_t impact;          //variable indicating the state of the impact
 
 //semaphore
@@ -53,7 +51,7 @@ static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure 
     {
     	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));  // wait for new values of the imu to be published
     	get_gravity(&imu_values);   //get the value of the y acceleration
-    	if(acceleration_y>THRESHOLD)    //if there has been an impact, the y value exceeds the threshold
+    	if(acceleration_y>ACCELERATION_THRESHOLD)    //if there has been an impact, the y value exceeds the threshold
     	    impact = true;
         chBSemSignal(&accelerometre_mesure_sem);    //free the semaphore accelerometre_mesure to indicate the accelerometer value has been refreshed
     }
@@ -61,14 +59,16 @@ static THD_FUNCTION(Accelerometre, arg)        //this thread is used to measure 
 
 void get_gravity(imu_msg_t *imu_values)
 {
+    float acceleration_float_to_int = 0;    //transition variable 
     float *accel = imu_values->acceleration;	//create a pointer to the array for shorter name
-    acceleration_y = accel[Y_AXIS];
+    acceleration_float_to_int = accel[Y_AXIS];
+    acceleration_y = acceleration_float_to_int*10; //*10 in order to have a static int instead of a float (unit conversion)
 
 }
 
-int get_acceleration_y(void)
+int16_t get_acceleration_y(void)
 {
-	return acceleration_y*10;  //return the value of the acceleration in the y direction of the robot as int value because we need it to send to the computer (*10 is to see the variations better)
+	return acceleration_y;  //return the value of the acceleration in the y direction of the robot as int value because we need it to send to the computer (*10 is to see the variations better)
 }
 
 uint8_t get_impact(void)
