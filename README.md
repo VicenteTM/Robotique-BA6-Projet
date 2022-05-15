@@ -39,6 +39,8 @@ Connecter l'e-puck2 à votre ordinateur et en noter le port.
 
 Exporter le code dans l' [**e-puck2**](https://www.gctronic.com/doc/index.php/e-puck2) à partir d' [*Eclipse*](https://www.eclipse.org/).
 
+Allumer le robot dans un environnement illuminé afin qu'il y ait une bonne calibration interne des capteurs de proximité. Attendre que les 4 LEDs supérieures rouges puis la LED frontal rouge soient allumées pour disposer le robot dans l'environnement de votre choix.
+
 ### **Python**
 
 Deux possibilités s'offre à vous en fonction de votre matériel.
