@@ -29,7 +29,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
     uint8_t imu=false;         //variable indicating if we are using the imu
     int16_t pos_l_av=0;         //used to memorize the previous value of the left motor
     int16_t pos_r_av=0;         //used to memorize the previous value of the right motor
-    int16_t last_pos=0;
+    int16_t last_pos=0;         //used to memorize the last position of each motor
     static int direction=X;     //used to memorize the present direction of the robot
     int distance=0;             //used to memorize the distance the robot has moved after a command
     coord_x_av = 0;             //initialize the coordinates
@@ -107,21 +107,21 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                 command = get_command();    //get the command from the value sent by the computer
             switch(command)         //treat the command sent by the computer
             {
-                case FORWARD:   //move 20mm forward
+                case FORWARD:   //move 40mm forward
                     direction=set_direction(FORWARD,direction);     //set the new direction of the robot
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
-                    last_pos=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    last_pos=right_motor_get_pos();     //memorize the position of one wheel for the condition
                     left_motor_set_speed(mm_to_step(SPEED));    //the left wheel will move the same distance as the right one
                     right_motor_set_speed(mm_to_step(SPEED));
                     compteur=0;
-                    while (right_motor_get_pos()<(last_pos+(4*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 20mm
+                    while (right_motor_get_pos()<(last_pos+(4*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 40mm
                     {
                         distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                         distance = step_to_mm(distance);    //convert distance in mm
-                        if (distance > 9)   //we send data to the computer every 4mm
+                        if (distance > REFRESH_DISTANCE)   //we send data to the computer every 10mm
                         {
-							coord_x_av += set_x(distance,direction);    //calculate the new x coordinate *2 because the counter is divided by 2
-							coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate *2 because the counter is divided by 2
+							coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+							coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
 							send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
 							pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
                         }
@@ -130,21 +130,21 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     right_motor_set_speed(0);   //reset the speed of the robot
                     distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
                     break;
-                case BACKWARD:  //move 20mm backward
+                case BACKWARD:  //move 40mm backward
                     direction=set_direction(BACKWARD,direction);     //set the new direction of the robot
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
-                    last_pos=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
+                    last_pos=right_motor_get_pos();     //memorize the position of for the condition
                     left_motor_set_speed(-mm_to_step(SPEED));	    //the left wheel will move the same distance as the right one
                     right_motor_set_speed(-mm_to_step(SPEED));
                     compteur = 0;
-                    while (right_motor_get_pos()>(last_pos-(4*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 20mm
+                    while (right_motor_get_pos()>(last_pos-(4*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 40mm
                     {
                     	distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
 						distance = step_to_mm(distance);    //convert distance in mm
-						if (distance < -9)   //we send data to the computer every 4mm
+						if (distance < -REFRESH_DISTANCE)   //we send data to the computer every 10mm
 						{
-							coord_x_av += set_x(distance,direction);    //calculate the new x coordinate *2 because the counter is divided by 2
-							coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate *2 because the counter is divided by 2
+							coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+							coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
 							send_data(coord_x_av,coord_y_av,direction,imu);	//send data to the computer
 							pos_r_av = right_motor_get_pos();	//refresh the last position of the robot
 						}
@@ -310,7 +310,7 @@ int16_t mm_to_step(int16_t value_mm)
 	double value;
     int16_t value_step;
     value =(double) value_mm * NSTEP_ONE_TURN / WHEEL_PERIMETER;    //equation to convert mm value to step value in double format for precision
-    value_step=floor(value + 0.5);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
+    value_step=ceil(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     return value_step;
 }
 
@@ -320,11 +320,11 @@ int16_t step_to_mm(int16_t value_step)
     int16_t value_mm;
     value = (double) value_step * WHEEL_PERIMETER / NSTEP_ONE_TURN;    //equation to convert value value to mm value in double format for precision
     if (value>0)
-    	value_mm=floor(value + 0.5);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
+    	value_mm=ceil(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     else
     {
     	if (value<0)
-    		value_mm=floor(value - 0.5);  //the values we use are int or uint, we need to round the double value to down because the wheels may glide backward
+    		value_mm=floor(value);  //the values we use are int or uint, we need to round the double value to down because the wheels may glide backward
     	else
     		value_mm = 0;
     }
