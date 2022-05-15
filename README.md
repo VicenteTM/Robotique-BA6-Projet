@@ -47,24 +47,24 @@ Deux possibilités s'offre à vous en fonction de votre matériel.
     - Sur Mac
 
     ```bash
-    python3 path_to_the_script/Scripts_python/main.py /dev/cu.usbmodemXXXX
+    python3 path_to_the_script/Scripts_python/ep2-movobot.py /dev/cu.usbmodemXXXX
     ```
 
     - Sur Windows
 
     ```cmd
-    python path_to_the_script\Scripts_python\main.py comX
+    python path_to_the_script\Scripts_python\ep2-movobot.py comX
     ```
 
 2) Démarrer avec l'éxécutable *(Compatible seulement avec Windows 64bits)*
 
-    Écrire le port dans le fichier text *WRITE_PORT_HERE.txt*
+    Écrire le port dans le fichier text *path_to_the_script\Scripts_python\precompiled_for_windows64bits\WRITE_PORT_HERE.txt*
 
     ```txt
     comX
     ```
 
-    Puis lancer l'éxécutable.
+    Puis lancer l'éxécutable *path_to_the_script\Scripts_python\precompiled_for_windows64bits\ep2-movobot.exe*.
 
 Où *comX* et *cu.usbmodemXXXX* est le port auquel l'e-puck2 est connecté par bluetooth à votre ordinateur.
 
@@ -83,6 +83,7 @@ Où *comX* et *cu.usbmodemXXXX* est le port auquel l'e-puck2 est connecté par b
 - ### Plot calibration
 
     Il s'agit de calibrer les capteirs de distances. Une calibration par défaut est intégré mais il est **conseillé** de calibré l'e-puck2 à chaque nouvelle utilisation et de licker sur le bouton **Save** pour que cette calibration soit éffective.
+    Pour être dans de bonnes conditions, placer le robot face à un mur de façon à ce qu'il y ait contact. Laisser 5cm de marge à l'arrière du robot pour qu'il puisse réaliser sa manoeuvre. Avoir une luminosité ambiente semblable à celle qui sera présnete pendant l'utilisation effective.
 
 - ### Reset Plot
 
