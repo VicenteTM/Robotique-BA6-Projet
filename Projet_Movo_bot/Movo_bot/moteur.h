@@ -15,10 +15,10 @@ void send_data(int16_t coord_x,int16_t coord_y, int direction, uint8_t imu);
 #define WHEEL_PERIMETER     130 // [mm]
 #define NB_COUNTER_HALF  84 // number of mm for 180 degrees turn of the motor theoretically (pi*D/2) [mm]
 #define NB_COUNTER_QUARTER  42 // number of mm for 90 degrees turn of the motor theoretically (pi*D/4) [mm]
-#define SPEED       20     // [mm/s]
+#define SPEED       30     // [mm/s]
 #define DISTANCE_ONE    10 // distance to move 1cm [mm]
-#define SENSOR_THRESHOLD	1000	// threshold for the sensors
-#define ERROR_THRESHOLD		800		// threshold for the adjustment error
+#define SENSOR_CALIBRATION_DISTANCE	    514	// threshold for the sensors
+#define ERROR_CALIBRATION_DISTANCE		567		// threshold for the adjustment error
 #define REFRESH_DISTANCE   9   //distance+1 at which we send the value to the computer
 
 //values of the 8 commands

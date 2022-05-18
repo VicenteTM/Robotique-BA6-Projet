@@ -15,6 +15,8 @@ enum {X,Y,M_X,M_Y};     //enum of the 4 directions in anti-clockwise order to in
 //static global
 static int16_t coord_x_av;     //used to memorize the previous value of the x coordinate
 static int16_t coord_y_av;     //used to memorize the previous value of the y coordinate
+static int16_t sensor_threshold = 1000;     //threshold at which an impact is considered
+static int16_t error_threshold = 850;       //sensor goal distance value for the robot to be correctely adjusted
 //thread
 static THD_WORKING_AREA(waMoteur, 1024);
 static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states handling and makes the wheels move accordingly, it also handles the data we send to the computer 
@@ -22,8 +24,11 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
+    uint8_t send = true;
     uint8_t stop_command = false; //if set to true, blocks the command reading
     uint8_t calibration_done = false;  //indicates if the calibration has been done (if we do it twice in a row, our graph becomes false)
+    uint8_t threshold_mesured = false;  //indicates if we have measured the sensor threshold to consider an impact
+    uint8_t adjust_mesured = false;     //indicates if we have measured the sensor value to indicate a correct adjustment
     uint16_t command;           //value of the command
     uint16_t compteur=0;        //this counter is used to plot the calibration data and to move forward and backward
     uint8_t imu=false;         //variable indicating if we are using the imu
@@ -66,6 +71,22 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                         data_calibration[1] = (get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2;   //y value to plot corresponding to the average intensity of the 2 front proximity sensors
                         SendUint16ToComputer((BaseSequentialStream *) &SD3, data_calibration, 2);   //send the 2 values to the computer
                         compteur++;
+                        if (!threshold_mesured)
+                        {
+                            if (compteur >= SENSOR_CALIBRATION_DISTANCE)
+                            {
+                                sensor_threshold = data_calibration[1];
+                                threshold_mesured = true;
+                            }  
+                        }
+                        if (!adjust_mesured)
+                        {
+                            if (compteur >= ERROR_CALIBRATION_DISTANCE)
+                            {
+                                error_threshold = data_calibration[1];
+                                adjust_mesured = true;
+                            }  
+                        }
                     }
                     left_motor_set_speed(0);    //stop the motors when calibration is done
                     right_motor_set_speed(0);
@@ -85,15 +106,15 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
         {
             if (get_impact())    //if an impact is detected
             {
-                if ((get_capteur_values_to_send()[3]>SENSOR_THRESHOLD) && (get_capteur_values_to_send()[0]<SENSOR_THRESHOLD))   //check if the robot has turned a bit to the right but is not facing a wall
+                if ((get_capteur_values_to_send()[3]>sensor_threshold) && (get_capteur_values_to_send()[0]<sensor_threshold))   //check if the robot has turned a bit to the right but is not facing a wall
                     command = ADJUST_RIGHT;   //change the command received by the computed to the emergency protocol
                 else
                 {
-                    if ((get_capteur_values_to_send()[2]>SENSOR_THRESHOLD) && (get_capteur_values_to_send()[1]<SENSOR_THRESHOLD))   //check if the robot has turned a bit to the left but is not facing a wall
+                    if ((get_capteur_values_to_send()[2]>sensor_threshold) && (get_capteur_values_to_send()[1]<sensor_threshold))   //check if the robot has turned a bit to the left but is not facing a wall
                         command = ADJUST_LEFT;   //change the command received by the computed to the emergency protocol
                     else
                     {
-                        if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>SENSOR_THRESHOLD) //check if the robot has run into a wall
+                        if (((get_capteur_values_to_send()[0]+get_capteur_values_to_send()[1])/2)>sensor_threshold) //check if the robot has run into a wall
                             command = TURNAROUND;   //change the command received by the computed to the emergency protocol
                         else
                         {
@@ -128,7 +149,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
-                    distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                    //distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                    send = false;
                     break;
                 case BACKWARD:  //move 40mm backward
                     direction=set_direction(BACKWARD,direction);     //set the new direction of the robot
@@ -137,7 +159,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     left_motor_set_speed(-mm_to_step(SPEED));	    //the left wheel will move the same distance as the right one
                     right_motor_set_speed(-mm_to_step(SPEED));
                     compteur = 0;
-                    while (right_motor_get_pos()>(last_pos-(4*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 40mm
+                    while (right_motor_get_pos()>(last_pos-(2*mm_to_step(DISTANCE_ONE))))   //for the same wheel, we wait until it has moved 40mm
                     {
                     	distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
 						distance = step_to_mm(distance);    //convert distance in mm
@@ -151,7 +173,8 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
-                    distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                    //distance = right_motor_get_pos()-pos_r_av;      //calculate the new distance reached by the robot
+                    send = false;
                     break;
                 case LEFT:  //turn 90 degrees to the left
                     direction=set_direction(LEFT,direction);     //set the new direction of the robot
@@ -159,24 +182,26 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_QUARTER)))     //for the same wheel, we wait until it has turned 90 degrees
                     {
-                    left_motor_set_speed(-mm_to_step(SPEED));   //if the right wheel is moving forward, the left one must move backward in order to turn
-                    right_motor_set_speed(mm_to_step(SPEED)); 
+                    left_motor_set_speed(-mm_to_step(SPEED)*2);   //if the right wheel is moving forward, the left one must move backward in order to turn
+                    right_motor_set_speed(mm_to_step(SPEED)*2); 
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
+                    send = true;
                     break;
                 case ADJUST_LEFT:  //turn to the left until the robot is realigned
                     direction=set_direction(FORWARD,direction); 	//no need to change the direction as this command is used to realign the robot
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     left_motor_set_speed(-mm_to_step(SPEED)/2);		//if the right wheel is moving forward, the left one must move backward in order to turn
                     right_motor_set_speed(mm_to_step(SPEED)/2);		//
-                    while ((get_capteur_values_to_send()[4]-get_capteur_values_to_send()[2])<ERROR_THRESHOLD)     //we wait until the right sensor is closer to the wall than the front right to realign the robot
+                    while ((get_capteur_values_to_send()[4]-get_capteur_values_to_send()[2])<error_threshold)     //we wait until the right sensor is closer to the wall than the front right to realign the robot
                     {
                         wait_capteur_received();		//wait for the sensors values to be refreshed
                     }
                     left_motor_set_speed(0);     //reset the speed of the robot
                     right_motor_set_speed(0);    //reset the speed of the robot
+                    distance=-mm_to_step(DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
                     reset_impact();		//reset the value to indicate that the impact has been treated successfully
+                    send = true;
                     break;
                 case RIGHT:     //turn 90 degrees to the right
                     direction=set_direction(RIGHT,direction);    //set the new direction of the robot
@@ -184,49 +209,56 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     pos_l_av=left_motor_get_pos();      //memorize the position of one wheel to calculate the distance
                     while (left_motor_get_pos()<(pos_l_av+mm_to_step(NB_COUNTER_QUARTER)))  //for the same wheel, we wait until it has turned 90 degrees
                     {
-                        left_motor_set_speed(mm_to_step(SPEED));
-                        right_motor_set_speed(-mm_to_step(SPEED));      //if the left wheel is moving forward, the right one must move backward in order to turn
+                        left_motor_set_speed(mm_to_step(SPEED)*2);
+                        right_motor_set_speed(-mm_to_step(SPEED)*2);      //if the left wheel is moving forward, the right one must move backward in order to turn
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
+                    send = true;
                     break;
                 case ADJUST_RIGHT:    //turn to the right until the robot is realigned
                     direction=set_direction(FORWARD,direction); //no need to change the direction as this command is used to realign the robot
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     left_motor_set_speed(mm_to_step(SPEED)/2);		//if the right wheel is moving forward, the left one must move backward in order to turn
                     right_motor_set_speed(-mm_to_step(SPEED)/2);	//
-                    while ((get_capteur_values_to_send()[5]-get_capteur_values_to_send()[1])<ERROR_THRESHOLD)     //we wait until the right sensor is closer to the wall than the front right to realign the robot
+                    while ((get_capteur_values_to_send()[5]-get_capteur_values_to_send()[3])<error_threshold)     //we wait until the right sensor is closer to the wall than the front right to realign the robot
                     {
                         wait_capteur_received();		//wait for the sensors values to be refreshed
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
+                    distance=-mm_to_step(DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
                     reset_impact();		//reset the value to indicate that the impact has been treated successfully
+                    send = true;
                     break;
                 case NEUTRE:    //the robot stops
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
                     distance=0;
                     calibration_done = false;
+                    send = true;
                     break;
                 case TURNAROUND:    //in case of impact, turn 180 degrees
                     direction=set_direction(TURNAROUND,direction);   //set the new direction of the robot
-                    distance=0;     //the robot has turned on himself, it didn't change coordinates
+                    distance=-mm_to_step(2*DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_HALF)))    //for the same wheel, we wait until it has turned 180 degrees
                     {
-                        left_motor_set_speed(-mm_to_step(SPEED));   //if the right wheel is moving forward, the left one must move backward in order to turn
-                        right_motor_set_speed(mm_to_step(SPEED));
+                        left_motor_set_speed(-mm_to_step(SPEED)*2);   //if the right wheel is moving forward, the left one must move backward in order to turn
+                        right_motor_set_speed(mm_to_step(SPEED)*2);
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
                     reset_impact();		//reset the value to indicate that the impact has been treated successfully
+                    send = true;
                     break;
             }
-            distance = step_to_mm(distance);    //convert distance in mm
-            coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
-            coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
-            send_data(coord_x_av,coord_y_av,direction,imu); //send the data to the computer
+            if (send){
+                distance = step_to_mm(distance);    //convert distance in mm
+                coord_x_av += set_x(distance,direction);    //calculate the new x coordinate
+                coord_y_av += set_y(distance,direction);    //calculate the new Y coordinate
+                send_data(coord_x_av,coord_y_av,direction,imu); //send the data to the computer
+            }
+           
         }
     //chThdSleepMilliseconds(100);	 //waits 0.1 second
     }
@@ -310,7 +342,7 @@ int16_t mm_to_step(int16_t value_mm)
 	double value;
     int16_t value_step;
     value =(double) value_mm * NSTEP_ONE_TURN / WHEEL_PERIMETER;    //equation to convert mm value to step value in double format for precision
-    value_step=ceil(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
+    value_step=round(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     return value_step;
 }
 
@@ -320,11 +352,11 @@ int16_t step_to_mm(int16_t value_step)
     int16_t value_mm;
     value = (double) value_step * WHEEL_PERIMETER / NSTEP_ONE_TURN;    //equation to convert value value to mm value in double format for precision
     if (value>0)
-    	value_mm=ceil(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
+    	value_mm=round(value);  //the values we use are int or uint, we need to round the double value to the upper because the wheels may glide
     else
     {
     	if (value<0)
-    		value_mm=floor(value);  //the values we use are int or uint, we need to round the double value to down because the wheels may glide backward
+    		value_mm=round(value);  //the values we use are int or uint, we need to round the double value to down because the wheels may glide backward
     	else
     		value_mm = 0;
     }
