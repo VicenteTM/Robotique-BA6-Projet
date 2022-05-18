@@ -6,6 +6,7 @@
 # Libraries import
 import sys
 import os
+import json
 import matplotlib
 from matplotlib.cbook import get_sample_data
 from platform import release
@@ -34,17 +35,11 @@ def saveCalibrationCallback(val):
     if reader_thd.commun_state == communication.DCCALIBRATION:
         
         script_folder = script_folder_path()
-        
-        with open(script_folder + '/calibrations/calibration.py', 'w') as doc:
-            doc.write('Distance = [')
-            for dist in reader_thd.captorD.dist:
-                doc.write(f'{"%.0f" % dist}, ')
-            doc.write('] \n\n')
-
-            doc.write('Intensity = [')
-            for inten in reader_thd.captorD.intensity:
-                doc.write(f'{inten}, ')
-            doc.write('] \n')
+        calibration = {"Distance": reader_thd.captorD.dist,
+                        "Intensity": reader_thd.captorD.intensity}
+        calibration_json = json.dumps(calibration)
+        with open(script_folder + '/calibrations/calibration.json', 'w') as json_file:
+            json_file.write(calibration_json)
         robot.calibrated = True
 
 

@@ -1,7 +1,10 @@
 # EP2-MOVOBOT
 # Robot class
 
+import json
 import math
+import os
+import sys
 import matplotlib.pyplot as plt
 from movobot_lib.mathLib import Vector
 import calibrations.default_calibration as default_calibration
@@ -213,7 +216,6 @@ class Robot:
 
 # Convert the intensity to distance from a database list of values
 def convert_intensity_to_mm(intensity, calibrated):
-
     # Use the "default_calibration" by default
     if not calibrated:
         intensity = closest_value(default_calibration.Intensity, intensity)
@@ -223,10 +225,13 @@ def convert_intensity_to_mm(intensity, calibrated):
 
     # Use the newest calibration if saved
     try:    # Double check
-        import calibrations.calibration as calibration
-        intensity = closest_value(calibration.Intensity, intensity)
-        index = calibration.Intensity.index(intensity)
-        distance = calibration.Distance[index]
+        script_folder = script_folder_path()
+        with open(script_folder + '/calibrations/calibration.json', 'w') as json_file:
+            calibration = json.load(json_file)
+            
+        intensity = closest_value(calibration["Intensity"], intensity)
+        index = calibration["Intensity"].index(intensity)
+        distance = calibration["Distance"][index]
     except:
         intensity = closest_value(default_calibration.Intensity, intensity)
         index = default_calibration.Intensity.index(intensity)
@@ -245,3 +250,11 @@ def closest_value(input_list, input_value):
     difference = lambda input_list : abs(input_list - input_value)
     res = min(input_list, key=difference)
     return res
+
+def script_folder_path():
+    if getattr(sys, 'frozen', False):
+        script_folder = os.path.dirname(os.path.dirname(sys.executable))
+    elif __file__:
+        script_folder = os.path.dirname(os.path.dirname(__file__))
+    
+    return script_folder
