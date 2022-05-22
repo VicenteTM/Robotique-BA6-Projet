@@ -106,7 +106,7 @@ class Robot:
         # Coordinates
         self.coord = self.ax.text(SIZEFROMROBOT * 1.5 + self.position.x, self.position.y, 
                                 f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
-                                f'\nTheta = {"%.0f" % (self.direction.theta % 360)}', style='italic',
+                                f'\nTheta = {"%.0f" % (self.direction.theta % 360)}°', style='italic',
                                 bbox={'facecolor':'blue', 'alpha':0.5, 'pad':10})
 
     # Position for ploting functions
@@ -166,7 +166,7 @@ class Robot:
         # Coordinates
         self.coord.set_position((SIZEFROMROBOT * 1.5 + self.position.x, self.position.y))
         self.coord.set_text(f'Legends:\n\nX = {"%.0f" % self.position.x}mm \nY= {"%.0f" % self.position.y}mm'\
-                            f'\nTheta = {"%.0f" % (self.direction.theta % 360)}')
+                            f'\nTheta = {"%.0f" % (self.direction.theta % 360)}°')
         
         # Readjust the ploting limits
         self.ax.set_xlim([-SIZEFROMROBOT + self.position.getx(), SIZEFROMROBOT + self.position.getx()])
