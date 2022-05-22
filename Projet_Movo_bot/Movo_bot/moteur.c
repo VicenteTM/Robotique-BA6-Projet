@@ -199,7 +199,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);     //reset the speed of the robot
                     right_motor_set_speed(0);    //reset the speed of the robot
-                    distance=-mm_to_step(DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     reset_impact();		//reset the value to indicate that the impact has been treated successfully
                     send = true;
                     break;
@@ -226,7 +226,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     }
                     left_motor_set_speed(0);    //reset the speed of the robot
                     right_motor_set_speed(0);   //reset the speed of the robot
-                    distance=-mm_to_step(DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     reset_impact();		//reset the value to indicate that the impact has been treated successfully
                     send = true;
                     break;
@@ -239,7 +239,7 @@ static THD_FUNCTION(Moteur, arg)    //this thread permits commands and states ha
                     break;
                 case TURNAROUND:    //in case of impact, turn 180 degrees
                     direction=set_direction(TURNAROUND,direction);   //set the new direction of the robot
-                    distance=-mm_to_step(2*DISTANCE_ONE);     //the robot has ran into a wall, the wheels have turned in the air
+                    distance=0;     //the robot has turned on himself, it didn't change coordinates
                     pos_r_av=right_motor_get_pos();     //memorize the position of one wheel to calculate the distance
                     while (right_motor_get_pos()<(pos_r_av+mm_to_step(NB_COUNTER_HALF)))    //for the same wheel, we wait until it has turned 180 degrees
                     {
